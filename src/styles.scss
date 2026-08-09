@@ -1,0 +1,79 @@
+@use '@angular/material' as mat;
+
+// Load Material theme once (matches angular.json — do not also import in index or duplicate here via build config)
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+// Anchors for the indigo-pink prebuilt palette (primary indigo, accent pink)
+$med-theme-primary: #3f51b5;
+$med-theme-accent: #ff4081;
+
+html, body {
+  font-size: 16px;
+  height: 70%;
+  margin: 0;
+  padding: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  line-height: 1.2;
+  background-color: #f0f0f0;
+}
+
+.mat-display-1 {
+  font-size: small;
+}
+
+.error-popup {
+  margin-top: 5px;
+  position: fixed;
+  top: 1px;
+  right: -100px;
+  transform: translateX(-60%);
+  background-color: #ff5100fa;
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+.popup-success {
+  margin-top: 5px;
+  position: fixed;
+  top: 1px;
+  right: -100px;
+  transform: translateX(-60%);
+  background-color: #00ff807a;
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+.mat-button-toggle {
+  background-color: #e0e0e0 !important;
+  color: #000;
+}
+
+.mat-button-toggle-checked {
+  background-color: $med-theme-primary !important;
+  color: white !important;
+}
+
+// Theme tokens + Material overrides (indigo primary, pink accent — matches indigo-pink prebuilt)
+:root {
+  --app-theme-primary: #{$med-theme-primary};
+  --app-theme-accent: #{$med-theme-accent};
+
+  @include mat.checkbox-overrides((
+    selected-focus-icon-color: $med-theme-accent,
+    selected-icon-color: $med-theme-accent,
+  ));
+  @include mat.slide-toggle-overrides((
+    track-outline-color: rgba(0, 0, 0, 0.38),
+    unselected-focus-track-color: $med-theme-primary,
+    unselected-hover-track-color: $med-theme-primary,
+    unselected-track-color: #e0e0e0,
+    selected-focus-track-color: $med-theme-accent,
+    selected-track-color: $med-theme-accent,
+  ));
+}

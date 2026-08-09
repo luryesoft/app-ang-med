@@ -1,0 +1,305 @@
+
+.container {
+    display: flex;
+    flex-direction: column; // Stack elements vertically
+    height: 85vh;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .search {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: #f0f0f0;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    height: 70px;
+  }
+  
+  .search-panel {
+    display: flex;
+    justify-content: flex-start; // Align items to the left
+    align-items: center;
+    background-color: #684aee;
+    height: 30px;
+    width: 350px;
+    border-radius: 15px;
+  }
+  
+  .full-width {
+    width: auto; // Override to not take full width
+    max-width: 300px; // Optional: set a max width for the input
+  }
+  
+  .search-input {
+    width: 300px;
+    border-radius: 15px;
+    border: 1px solid #ccc;
+    height: 30px;
+    padding-left: 10px;
+    transition: border-color 0.3s;
+  
+    &:focus {
+      border-color: #0000ff; // Change to blue when focused
+      outline: none; // Remove default outline
+    }
+  }
+  
+  .panel-container {
+    display: flex; // Position left and right panels side by side
+    flex: 1; // Allow this container to take up remaining space
+  }
+  .search-button{
+    margin-right: 10px;
+  }
+  
+  .no-results {
+    margin-left: 16px;
+    margin-right: 16px;
+    margin-top: 10px;
+    text-align: center; 
+  }
+  .left-panel {
+    width: 30%;
+    background-color: #f0f0f0;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    margin-left: 10px;
+    margin-right: 10px;
+    max-height: 77vh; /* Limit height to viewport */
+    //flex: 1; 
+  }
+  
+  .provider-details {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px;
+    background-color: #f5f5f5; // Example background color
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    color: #5e5151;
+    height: 40px;
+  }
+  
+  .add-icon {
+    margin-left: 16px;
+    margin-right: 16px;
+    cursor: pointer;
+    color: hsl(144, 74%, 34%);
+  }
+  
+  .provider-row:hover {
+    background-color: #c9c5e5; /* Optional: hover effect */
+  }
+  
+  .selected-provider {
+    background-color: #e0e0e0; // Highlight the entire item on hover
+  }
+  
+  .provider-item {
+    cursor: pointer;
+    padding: 2px;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  
+    &:hover {
+      background-color: #e0e0e0; // Highlight the entire item on hover
+    }
+ 
+    .provider-info {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      width: 100%; // Ensure it takes full width of the provider-item
+    }
+    .provider-name {
+      flex-grow: 1;
+      margin-right: 5px;
+      width: 55%;
+      //border: 1px solid #ccc;
+    }
+    
+    .provider-status {
+      margin-left: 10px;
+      width: 10%;
+ /* 
+      .custom-slider.mat-slide-toggle.mat-checked .mat-slide-toggle-thumb {
+        background-color: green !important; 
+      
+      .custom-slider.mat-slide-toggle.mat-checked .mat-slide-toggle-bar {
+        background-color: rgba(0, 128, 0, 0.5) !important;
+      }
+      
+      .custom-slider .mat-slide-toggle-thumb {
+        background-color: lightgray !important; 
+      }
+      
+      .custom-slider .mat-slide-toggle-bar {
+        background-color: gray !important;
+      }
+      //border: 1px solid #ccc;
+      */
+    }
+  
+    .delete-icon {
+      margin-left: 16px;
+      cursor: pointer;
+      color: #cc1212;
+      visibility: hidden;
+    }
+  
+    &:hover .delete-icon {
+      visibility: visible; // Show the icon on hover
+    }
+  
+  .selected-icon {
+    visibility: visible; // Show the icon on hover
+  }    
+  }
+  
+  .title-name {
+    flex-grow: 1;
+    margin-right: 10px;
+    width: 30%;
+    //border: 1px solid #ccc;
+  }
+  
+  .title-specialty {
+    margin-right: 10px;
+    width: 20%;
+    //border: 1px solid #ccc;
+  }
+  
+  .title-status {
+    margin-right: 10px;
+    width: 10%;
+   // border: 1px solid #ccc;
+  }
+  
+  
+  .right-panel {
+    width: 65%;
+    padding: 20px;
+   // overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f0f0;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    max-height: 100vh; /* Limit height to viewport */
+    flex: 1; 
+  }
+  
+  .no-selection-message {
+    margin-left: 16px;
+    margin-right: 16px;
+    margin-top: 16px;
+    color: #5e5151;
+    font-weight: bold;
+  }
+  
+  .row-wrapper {
+    width: 100%; // Adjusted to fit within the container
+    margin-left: 16px;
+    margin-right: 16px;
+    color: rgb(221, 202, 202);
+    margin-top: 10px;
+    z-index: 100; // Ensure it overlays correctly
+  }
+  
+  .form-field {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  
+  .long-column {
+    width: 400px;
+    margin-left: 10px;
+    margin-right: 16px;
+  }
+  .short-column {
+    width: 110px;
+    margin-left: 16px; /* Adjust the value as needed */
+    margin-right: 16px;
+  }
+  
+  .facilities-panel {
+    //min-height: 110px;
+    height: 270px; /* Maximum height */
+    transition: height 0.3s ease;
+    margin-top: 10px;
+    background-color: #f0f0f0;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    font-weight: bold;
+    color: #5e5151;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .facility-header {
+    display: flex;
+    margin-top: 10px;
+    height: 40px;
+    align-items: center;
+    justify-content: space-between; /* Adjusts spacing between title and icon */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    color: #5e5151;
+  }
+  
+  .facility-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .ddelete-facility-icon {
+    cursor: pointer;
+    color: black; /* Initial color for the delete icon */
+    transition: color 0.3s;
+  }
+  
+  .delete-facility-icon:hover {
+    color: red; /* Change to a brighter red on hover */
+  }
+  
+  .facility-title {
+    margin-left: 16px;
+    margin-right: 16px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+  .facility-cards {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 16px; 
+   // margin-top: 2px;
+   // margin-bottom: 10px;
+    margin-left: 16px;
+    margin-right: 16px;
+    height: 140px;
+   
+  }
+
+  .disabled-insurance {
+    color: gray;
+    font-style: italic;
+    text-decoration: line-through;
+  }
+
+  .selected-insurance {
+    background-color: #e0e0e0; // Highlight the entire item on hover
+  }
+
+  .inactive-insurance {
+    color: gray;
+    font-style: italic;
+    text-decoration: line-through;
+  }
+
+
+  

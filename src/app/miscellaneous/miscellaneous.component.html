@@ -1,0 +1,237 @@
+<div class="main-container">
+    <div class="spt-code"  [ngClass]="{'cpt-expanded': isLeftExpanded}">
+
+        <div class="cpt-header" style="background-color:#dcdcdc">
+            <span class="cpt-title">&nbsp;CPT (Current Procedural Terminology) Codes</span>
+            <mat-icon class="add-icon" 
+            style="color:rgb(122, 106, 106);font-variation-settings: 'wght' 500;" 
+            class="material-symbols-outlined" 
+            (click)="toggleLeftPanel()">deployed_code_alert</mat-icon>
+        </div>
+            <div class="cpt-filter">
+                    <input class="filter-input" type="text" 
+                    placeholder="Filter by CPT code or Description"
+                    [(ngModel)]="filterQuery" 
+                    (keyup)="applyFilter(); $event.key === 'Enter' && applyFilter()">
+                    <button mat-icon-button matSuffix *ngIf="filterQuery" (click)="clearFilter()">
+                        <mat-icon class="clear-icon">cancel</mat-icon>
+                      </button>
+                    <mat-icon fontSet="material-symbols-outlined" 
+                    class="delete-icon" style="font-variation-settings: 'wght' 200;color:red;"
+                    matTooltip="delete selected CPT Code"
+                    (click)="openWarningDialog('Are you sure you want to delete this CPT code?', selectedRow.cpt_id)">delete_outline</mat-icon>
+
+                    <mat-icon class="add-icon" matTooltip="Add CPT Code" (click)="switchToAddMode()">playlist_add</mat-icon>
+                    <mat-icon class="add-icon" matTooltip="Select CPT Codes" style="color:#2196F3;" (click)="searchCPTCodes('C', '%')">list_alt_add</mat-icon>
+                    
+            </div>
+            <div class="cpt-content">
+                <div class="cpt-table">
+                <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8" style="border: 1px solid rgb(231, 231, 236);border-radius: 10px;">
+
+                    <!-- CPT Code Column -->
+                    <ng-container matColumnDef="cpt_code">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> CPT Code </th>
+                      <td mat-cell *matCellDef="let element"
+                      [ngClass]="{'inactive-cpt': element.active_in === 'I'}"
+                      > {{element.cpt_code}} </td>
+                    </ng-container>
+                  
+                    <!-- CPT Code Short Name Column -->
+                    <ng-container matColumnDef="cpt_code_short_nm">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Short Name </th>
+                      <td mat-cell *matCellDef="let element"> {{element.cpt_code_short_nm}} </td>
+                    </ng-container>
+                  
+                    <!-- CPT Code Description Column -->
+                    <ng-container matColumnDef="cpt_code_description">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Description </th>
+                      <td mat-cell *matCellDef="let element"> {{element.cpt_code_description}} </td>
+                    </ng-container>
+                  
+                    <!-- CPT Code Modifier Column -->
+                    <ng-container matColumnDef="cpt_code_modifier">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Modifier </th>
+                      <td mat-cell *matCellDef="let element"> {{element.cpt_code_modifier}} </td>
+                    </ng-container>
+                  
+                    <!-- CPT Code Charge Amount Column -->
+                    <ng-container matColumnDef="cpt_code_charge_am">
+                      <th mat-header-cell *matHeaderCellDef> Charge Amount </th>
+                      <td mat-cell *matCellDef="let element"> {{element.cpt_code_charge_am}} </td>
+                    </ng-container>
+                  
+                    <!-- Active In Column -->
+                    <ng-container matColumnDef="active_in">
+                      <th mat-header-cell *matHeaderCellDef> Status </th>
+                      <td mat-cell *matCellDef="let element" [ngClass]="{'inactive-cpt': element.active_in === 'I'}">
+                        <span *ngIf="element.active_in === 'A'" class="status-active">Active</span>
+                        <span *ngIf="element.active_in === 'I'" class="status-inactive">Inactive</span>
+                      </td>
+                    </ng-container>
+                    
+                    <!-- Header and Row Declarations -->
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; let i = index;columns: displayedColumns;" 
+                    (click)="selectRow(row)"
+                    [ngClass]="{'selected-row': selectedRowIndex === i}" >
+                    </tr>
+                    
+                  </table>
+                </div>
+                <div class="cpt-update">
+                    <form [formGroup]="updateForm" (ngSubmit)="updateRow()">
+                        <div class="form-group">
+                            <mat-form-field appearance="fill" class="short_form-field" style="width: 100px;margin-right: 10px;">
+                                <mat-label class="small_label">CPT Code:</mat-label>
+                                <input matInput maxlength="5" formControlName="cpt_code" required>
+                                <mat-error *ngIf="updateForm.get('cpt_code')?.invalid && updateForm.get('cpt_code')?.touched">
+                                    CPT Code is required.
+                                </mat-error>
+                            </mat-form-field>
+                            <mat-form-field appearance="fill" class="long_form-field" style="width: 500px;margin-right: 10px;">
+                                <mat-label class="small_label">Short Name:</mat-label>
+                                <input matInput maxlength="55"formControlName="cpt_code_short_nm" required>
+                                <mat-error *ngIf="updateForm.get('cpt_code_short_nm')?.invalid && updateForm.get('cpt_code_description')?.touched">
+                                    Description is required.
+                                </mat-error>
+                            </mat-form-field>                            
+                            <mat-form-field appearance="fill" class="short_form-field" style="width: 78px;margin-right: 10px;">
+                                <mat-label class="small_label">Modifier:</mat-label>
+                                <input matInput maxlength="3" formControlName="cpt_code_modifier" >
+                            </mat-form-field>
+
+                            <mat-form-field appearance="fill" class="short_form-field" style="width: 120px; margin-right: 10px;">
+                            <mat-label class="small_label">Charge Amount:</mat-label>
+                            <input matInput  maxlength="9"  formControlName="cpt_code_charge_am" >
+                            <mat-error *ngIf="updateForm.get('cpt_code_charge_am')?.invalid && updateForm.get('cpt_code_charge_am')?.touched">
+                                Numbers only.
+                            </mat-error>
+                            </mat-form-field>
+
+                        </div>
+                        <div class="form-group">
+                            <mat-form-field appearance="fill" class="form-field" style="width: 620px;margin-right: 10px;">
+                                <mat-label class="small_label">Description:</mat-label>
+                                <input matInput maxlength="150" formControlName="cpt_code_description">
+                            </mat-form-field>
+                            <mat-form-field appearance="fill" style="width: 120px;margin-right: 10px;">
+                                <mat-label class="small_label">Status</mat-label>
+                                <mat-select [(value)]="active_in" (selectionChange)="onStatusChange($event.value)">
+                                    <mat-option value="A">Active</mat-option>
+                                    <mat-option value="I">Inactive</mat-option>
+                                </mat-select>
+                            </mat-form-field>   
+
+                            <button mat-raised-button (click)="onSubmitCptCode()"
+                            [ngClass]="{'active-button': isActive, 'inactive-button': !isActive}"
+                            type="submit" [disabled]="updateForm.invalid"
+                            > {{ isEditMode ? 'Update' : 'Add' }}</button>
+                        </div>
+
+                    </form>
+            
+                </div>
+            </div>
+
+    </div>
+
+    <mat-divider class="divider"></mat-divider>
+
+    <div class="icd-code"  [ngClass]="{'icd-expanded': isRightExpanded}">
+
+        <div class="icd-header" style="background-color:#dcdcdc">
+            <span class="icd-title">&nbsp;ICD (International Classification of Diseases) Codes</span>
+            <mat-icon class="add-icon" 
+            style="color:rgb(122, 106, 106);font-variation-settings: 'wght' 500;" 
+            class="material-symbols-outlined" 
+            (click)="toggleRightPanel()">deployed_code_history</mat-icon>
+        </div>
+        <div class="icd-filter">
+            <input class="filter-input" type="text" 
+            placeholder="Filter by ICD code or Description"
+            [(ngModel)]="icdFilterQuery" 
+            (keyup)="applyIcdFilter(); $event.key === 'Enter' && applyIcdFilter()">
+            <button mat-icon-button matSuffix *ngIf="icdFilterQuery" (click)="clearIcdFilter()">
+                <mat-icon class="clear-icon">cancel</mat-icon>
+              </button>
+            <mat-icon fontSet="material-symbols-outlined" 
+            class="delete-icon" style="font-variation-settings: 'wght' 200;color:red;"
+            matTooltip="delete selected ICD Code"
+            (click)="openWarningIcdDialog('Are you sure you want to delete selected ICD code?', selectedRow.icd_id)">delete_outline</mat-icon>
+            <button mat-icon-button matTooltip="Save ICD Code changes" (click)="updateModifiedRows()">
+                <mat-icon style="font-variation-settings: 'wght' 200;color:green;">save</mat-icon>
+              </button>
+            <mat-icon class="add-icon" matTooltip="Select ICD Codes" style="color:#2196F3;" (click)="openIcdCodeDialog()">list_alt_add</mat-icon>
+
+        </div>
+        <div class="icd-content">
+            <table mat-table [dataSource]="dataSourceIcd" matSort class="mat-elevation-z8">
+                <!-- ICD ID Column -->
+                <ng-container matColumnDef="icd_id">
+                  <th mat-header-cell *matHeaderCellDef> ICD ID </th>
+                  <td mat-cell *matCellDef="let elementicd">
+                    {{elementicd.icd_id}}
+                  </td>
+                </ng-container>
+              
+                <!-- ICD Code Column -->
+                <ng-container matColumnDef="icd_code">
+                  <th mat-header-cell *matHeaderCellDef> ICD Code </th>
+                  <td mat-cell *matCellDef="let elementicd" class="wrap-text">
+                    {{elementicd.icd_code}}
+                  </td>
+                </ng-container>
+              
+                <!-- ICD Code Description Column -->
+                <ng-container matColumnDef="icd_code_description">
+                  <th mat-header-cell *matHeaderCellDef> Description </th>
+                  <td mat-cell *matCellDef="let elementicd" class="wrap-text">
+                    {{elementicd.icd_code_description}}
+                  </td>
+                </ng-container>
+              
+                <!-- ICD Code Text Column -->
+                <ng-container matColumnDef="icd_code_text">
+                    <th mat-header-cell *matHeaderCellDef> Short Name </th>
+                    <td mat-cell *matCellDef="let elementicd">
+                      <textarea matInput [(ngModel)]="elementicd.icd_code_text" class="fixed-size-input" placeholder="Text" maxlength="50" (ngModelChange)="markRowAsModified(elementicd.icd_code)"></textarea >
+                    </td>
+                  </ng-container>
+              
+                <!-- Active In Column -->
+                <ng-container matColumnDef="active_in">
+                    <th mat-header-cell *matHeaderCellDef>Status</th>
+                    <td mat-cell *matCellDef="let elementicd">
+                      <mat-button-toggle-group class="toggle-icd"
+                      [(ngModel)]="elementicd.active_in"
+                      (ngModelChange)="markRowAsModified(elementicd.icd_code)"
+                      [hideSingleSelectionIndicator]="toggleSingleSelectionIndicator()"
+                      (change)="onActiveInChange(elementicd)"
+                      aria-label="Active In Toggle">
+                      <mat-button-toggle value="A">A</mat-button-toggle>
+                      <mat-button-toggle value="I">I</mat-button-toggle>
+                    </mat-button-toggle-group>
+                    </td>
+                  </ng-container>
+                <!-- Save Icon Column -->
+ 
+                <!-- Header and Row Declarations -->
+                <tr mat-header-row *matHeaderRowDef="displayedColumnsIcd"></tr>
+                <tr mat-row *matRowDef="let element; let x = index; columns: displayedColumnsIcd;"
+                (click)="selectIcdRow(element)"
+                [ngClass]="{'selected-row-icd': selectedRowIndexIcd === x}"></tr>
+              </table>
+        </div>
+
+    </div>
+
+</div>
+
+<div *ngIf="showPopup" class="error-popup">
+    {{ errorMessage }}
+  </div>
+  
+  <div *ngIf="showSuccessPopup" class="popup-success">
+    {{ successMessage }}
+  </div>

@@ -1,0 +1,96 @@
+//@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+$mat-badge-font-size: 12px;
+$mat-badge-font-weight: 600;
+$mat-badge-default-size: 22px !default;
+$mat-badge-small-size: $mat-badge-default-size - 6;
+$mat-badge-large-size: $mat-badge-default-size + 6;
+
+.header-container {
+  display: flex;
+    position: relative;
+    display: flex;
+    background-color: #787ae3;
+    height: 45px;
+    width: 100%;
+    border: 1px solid #7776c556;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    align-items: center;
+  }
+
+  .mat-display-1 {
+    font-size: 1.2rem; /* Material Design display size */
+    font-weight: 200;
+    line-height: 1.17;
+    letter-spacing: 0.00735em;
+    color: white;
+  }
+  .menu-container {
+    display: flex;
+    background-color: var(--app-theme-primary);
+    height: 40px;
+    width: 100%;
+    border: 1px solid #36108f;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    margin-top: 1px;
+  }
+
+  .flat_menu_button {
+    height: 25px;
+    width: 150px!important;
+    min-width: unset!important;
+    margin-right:10px;
+    margin-left:10px;
+  }
+ 
+  .greating {
+    background-color: transparent;
+    //padding: 1rem;
+    text-align: center;
+    //top: 0px;
+    //left: 5%;
+    width: 80%;
+    max-width: 700px;
+    margin: 0 auto;
+    margin-top: 0px;
+    //border: 2px solid #ccc;
+    //border-radius: 5px;
+    //box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1); 
+     
+  }
+
+  .logo-card {
+    margin-left: 1px;
+    img {
+      height: 45px;
+    }
+  }
+  
+  .left-button {
+   position: absolute;
+   right: 0;
+    margin-right:30px;
+  
+  }
+
+  .logout-icon {
+    position: absolute;
+    right: 0;
+    margin-right:80px;
+    color: #fff;
+  }
+
+  .layout_menu_button{
+    margin-left: 10px;
+    height: 25px;
+    width: 150px;
+    border-radius: 10px;
+    background-color: white;
+    border-color: rgb(72, 75, 222);
+    border-style: solid;
+    border-width: 1px;
+
+  }
+
+
+

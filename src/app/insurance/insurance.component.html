@@ -1,0 +1,210 @@
+<div class="container">
+  <!-- search panel -->
+   <div >
+    <mat-card class="search">
+        <mat-card-content>
+        
+          <div class="search-panel">
+              <input matInput 
+              id="search" 
+              type="search" 
+              [placeholder]="searchPlaceholder" 
+              [(ngModel)]="searchQuery" class="search-input"
+              (input)="onSearchInputChange()"
+              >
+            <button mat-icon-button aria-label="Search" (click)="searchInsurances()" class="search-button" style="color:white;">
+              <mat-icon fontSet="material-symbols-outlined" >search</mat-icon>
+            </button> 
+          </div>
+        </mat-card-content>
+    <div *ngIf="searchInitiated &&searchQuery && insurances.length === 0" class="no-results">
+      <p style="color:red;font-weight:bold;">No results, please try a different search.</p>
+    </div> 
+    </mat-card>
+</div>
+<div class="panel-container">
+  <div class="left-panel" >
+    
+      <div class="full-width-list">
+        <div class="provider-details" style="background-color:#dcdcdc">
+          <span class="title-name"> Insurance</span>
+          <span class="title-status">Status</span>
+          <mat-icon class="add-icon" matTooltip="Add a new Insurance" (click)="switchToAddMode()">playlist_add</mat-icon>
+        </div>
+
+        <div class="provider-item" *ngFor="let insurance of insurances" 
+        [ngClass]="{'selected-insurance': insurance === selectedInsurance, 'disabled-insurance': insurance.ic_status !== 'A'}"  
+        matTooltip="{{ insurance.ic_address }}, {{ insurance.ic_city }}" 
+        matTooltipPosition="below"
+        (click)="selectInsurance(insurance)">
+    
+          <div class="provider-info row">
+            <span class="provider-name"
+            [ngClass]="{'inactive-insurance': insurance.ic_status !== 'A'}"
+            >{{ insurance.ic_name }}</span>
+            <span (click)="confirmAndDeleteInsurance(insurance)" class="delete-icon">
+              <mat-icon fontSet="material-symbols-outlined" 
+              [ngClass]="{'selected-icon': selectedInsurance === insurance}"
+              class="delete-icon" 
+              style="font-variation-settings: 'wght' 200;">delete_outline</mat-icon>
+            </span>
+          </div>
+        </div>
+      </div>
+    
+  </div>
+
+  
+
+  <div class="right-panel" >
+        <div class="provider-details" style="background-color:#dcdcdc">
+          {{ isEditMode ? 'Edit Insurance' : 'Add New Insurance' }}
+          <div *ngIf="!isFormComplete()">
+            <p class="error-message" style="color:red;">  Please fill in all required fields.  </p>
+          </div>
+          <span class="provider-status">
+            <mat-slide-toggle class="custom-slider"
+              labelPosition="before"
+              [checked]="selectedInsurance && selectedInsurance.ic_status === 'A'"
+              (change)="onToggleChange($event, insuranceForm.value)">
+              Status {{ selectedInsurance && selectedInsurance.ic_status === 'A' ? 'Active' : 'Inactive' }}
+            </mat-slide-toggle>
+          </span>
+          <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;" (click)="checkFormDirty(insuranceForm)">payments</mat-icon>
+        </div>
+
+        <ng-container *ngIf="!isEditMode || selectedInsurance; else noSelection">
+          <form [formGroup]="insuranceForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="row-wrapper">
+
+              <mat-form-field appearance="fill" class="long-column" style="width: 500px;">
+                <mat-label>Insurance Name</mat-label>
+                <input matInput formControlName="ic_name" required>
+                <mat-error *ngIf="insuranceForm.get('ic_name')?.hasError('required')">
+                  required.
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="form-field">
+                <mat-label>License Number</mat-label>
+                <input matInput formControlName="ic_license_no">
+              </mat-form-field>
+              
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="row-wrapper">
+                <mat-form-field appearance="fill" class="long-column">
+                  <mat-label>Address</mat-label>
+                  <input matInput formControlName="ic_address" required>
+                  <mat-error *ngIf="insuranceForm.get('ic_address')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>City</mat-label>
+                  <input matInput formControlName="ic_city" required>
+                  <mat-error *ngIf="insuranceForm.get('ic_city')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="short-column ">
+                  <mat-label>State</mat-label>
+                  <input matInput formControlName="ic_state" required>
+                  <mat-error *ngIf="insuranceForm.get('ic_state')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="short-column">
+                  <mat-label>Zip</mat-label>
+                  <input matInput formControlName="ic_zip" required>
+                  <mat-error *ngIf="insuranceForm.get('ic_zip')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+
+              </div>
+            </div>
+
+            <div class="provider-details" style="width: 100%;margin-top: 20px;margin-bottom: 10px;">
+              <span >Billing Address</span>
+          </div>
+
+          <div class="row">
+            <div class="row-wrapper">
+              <mat-form-field appearance="fill" class="long-column">
+                <mat-label>Billing Address</mat-label>
+                <input matInput formControlName="ic_billing_address" >
+                <mat-error *ngIf="insuranceForm.get('ic_billing_address')?.hasError('required')">
+                  required.
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="form-field">
+                <mat-label>City</mat-label>
+                <input matInput formControlName="ic_billing_city" >
+                <mat-error *ngIf="insuranceForm.get('ic_billing_city')?.hasError('required')">
+                  required.
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="short-column">
+                <mat-label>State</mat-label>
+                <input matInput formControlName="ic_billing_state" >
+                <mat-error *ngIf="insuranceForm.get('ic_billing_state')?.hasError('required')">
+                  required.
+                </mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="fill" class="short-column">
+                <mat-label>Zip</mat-label>
+                <input matInput formControlName="ic_billing_zip" >
+                <mat-error *ngIf="insuranceForm.get('ic_billing_zip')?.hasError('required')">
+                  required.
+                </mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="fill" class="form-field" style="display:none;">
+                <mat-label>ic status</mat-label>
+                <input matInput formControlName="ic_status" >
+                <mat-error *ngIf="insuranceForm.get('ic_status')?.hasError('required')">
+
+                </mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="fill" class="form-field" style="display:none;">
+                <mat-label>ic id </mat-label>
+                <input matInput formControlName="ic_id" >
+                <mat-error *ngIf="insuranceForm.get('ic_id')?.hasError('required')">
+
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>    
+          
+          <div class="row">
+            <button mat-raised-button color="primary" type="submit">
+              {{ isEditMode ? 'Update Insurance' : 'Add Insurance' }}
+            </button>
+          </div>          
+          </form>
+        </ng-container>
+
+        <ng-template #noSelection>
+
+          <p class="no-selection-message">
+            {{ isEditMode ? 'Select a provider from the list to view details or add a new provider' : '' }}
+          </p>
+        </ng-template>
+  </div>
+
+</div>
+
+<div *ngIf="showPopup" class="error-popup">
+  {{ errorMessage }}
+</div>
+
+<div *ngIf="showSuccessPopup" class="popup-success">
+  {{ successMessage }}
+</div>

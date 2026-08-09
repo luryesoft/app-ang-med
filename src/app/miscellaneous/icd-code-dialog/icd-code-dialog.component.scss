@@ -1,0 +1,162 @@
+.mat-dialog-container {
+    position: relative;
+    padding-bottom: 64px; /* Ensure space for the actions */
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .filter-input-container {
+    display: flex;
+    padding: 5px;
+    border: 1px solid rgb(231, 231, 236);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    height: 35px;
+    width: 95%;
+    background-color: white;
+    align-items: center;
+    margin-left: 16px;
+    margin-bottom: 16px;
+    margin-top: 16px;
+    justify-content: flex-end; /* Aligns the toggle button to the right */
+    align-items: center; /* Vertically centers the content */
+    padding: 8px; /* Optional: Add padding for better appearance */
+  }
+  .scrollable-content {
+      max-height: 78vh;
+      overflow-y: auto; /* Enable vertical scrolling */
+      padding: 16px; 
+      border: 1px solid rgb(231, 231, 236);
+      //box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;   /* Optional: Add padding for better appearance */
+    }
+  
+  
+    .filter-input {
+      flex-grow: 1; /* Allows the input to take up available space */
+      width: 100px; /* Optional: Limit the maximum width of the input */
+      border: 1px solid blue($color: #000000);
+      border-radius: 8px;
+  
+    }
+    mat-list-item:hover {
+      background-color: #f0f0f0; /* Change to your desired hover color */
+      cursor: pointer; /* Optional: change cursor to pointer to indicate interactivity */
+    }
+  
+    .dialog-actions {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 8px 16px;
+      box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+      background-color: white;
+      display: flex;
+      justify-content: flex-end; /* Align buttons to the right */
+    }
+  
+    .selected-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f0f0f0 !important;
+    }
+  
+  mat-list-item:hover {
+    background-color: #f0f0f0; /* Change to your desired color */
+    cursor: pointer; /* Optional: change cursor to pointer to indicate interactivity */
+  }
+  
+  .clear-icon {
+    color: #2196F3; /* Change to your desired color */
+  }
+  
+  .toggle-group {
+    margin-left: 16px;
+    margin-right: 16px;
+    background-color: #2196F3!important;
+    color: white!important;
+    height: 35px;
+  }
+  
+  .list-item-content {
+    display: flex;
+    justify-content: space-between; /* Distributes space between text and checkbox */
+    align-items: center; /* Vertically centers the content */
+    width: 100%; /* Ensures the flex container takes full width */
+  }
+  
+  .checkbox-style {
+    margin-left: auto; /* Pushes the checkbox to the far right */
+  }
+  
+  .cancel-button {
+    margin: 0 10px; 
+    border-radius: 7px;
+    border: 0.5px solid #746464;
+    padding: 5px 10px;
+    width: 100px;
+    &:hover {
+      background-color: #007bff;
+      color: white;
+    }
+  }
+  
+  .confirm-button {
+    margin: 0 10px; 
+    border-radius: 7px;
+    border: 0.5px solid #746464;
+    padding: 5px 10px;
+    width: 100px;
+    &:hover {
+      background-color: #007bff;
+      color: white;
+    }
+  }
+
+  .loading-dots {
+    display: flex;
+    width: 100%;
+    position: fixed; /* Position the dots fixed to the viewport */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust for the element's own size */
+    justify-content: center;
+    align-items: center;
+    border: 1px solid red;
+  }
+  
+  .dot {
+    width: 10px;
+    height: 10px;
+    margin: 0 5px;
+    background-color: #2196F3; /* Adjust color as needed */
+    border-radius: 50%;
+    animation: dot-flashing 1s infinite linear alternate;
+  }
+  
+  @keyframes dot-flashing {
+    0% {
+      opacity: 0.2;
+    }
+    50%,
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  .dot:nth-child(1) {
+    animation-delay: 0s;
+  }
+  
+  .dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  .dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }

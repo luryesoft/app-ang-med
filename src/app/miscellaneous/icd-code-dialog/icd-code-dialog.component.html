@@ -1,0 +1,54 @@
+<div class="container">
+    <div class="filter-input-container">
+        <input class="filter-input" type="text" 
+        placeholder="Type ICD code or Description (4 or more characters) and press Enter"
+        [(ngModel)]="filterQuery" 
+        (keydown)="onKeydown($event)">
+        
+        <button mat-icon-button matSuffix  (click)="clearSearch()">
+            <mat-icon class="clear-icon">cancel</mat-icon>
+        </button>
+        <div *ngIf="isLoading" class="loading-spinner">
+            <!-- Replace with your carousel or spinner component -->
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div> 
+        <h1 mat-dialog-title>ICD Codes</h1>
+        <mat-button-toggle-group [(value)]="toggleState" (change)="toggleFilter($event.value)" 
+        [hideSingleSelectionIndicator]="true"
+        name="filterOptions" aria-label="Filter Options">
+          <mat-button-toggle value="all">All</mat-button-toggle>
+          <mat-button-toggle value="selected">Selected</mat-button-toggle>
+        </mat-button-toggle-group>
+    </div>
+
+    <div mat-dialog-content class="scrollable-content">
+
+        <mat-list *ngIf="!isLoading">
+            <mat-list-item *ngFor="let icdCode of filteredIcdCodes" >
+                <div class="list-item-content">
+              {{ icdCode.icd_code }} - <small>{{ (icdCode.icd_code_description | slice:0:165) + (icdCode.icd_code_description.length > 165? '...' : '')  }}</small>
+              <mat-checkbox class="checkbox-style"
+              [checked]="selectedIcdCodes.has(icdCode.icd_code)" 
+              (change)="toggleSelection(icdCode.icd_code)">
+            </mat-checkbox>
+            </div>
+            </mat-list-item>
+          </mat-list>
+    </div>
+</div>
+
+<div mat-dialog-actions class="dialog-actions">
+    <button mat-button class="cancel-button"  (click)="dialogRef.close()">Cancel</button>
+    <button mat-button class="confirm-button" (click)="openWarningDialog('Are you sure you want to copy the selected CPT codes?')">Confirm</button>  
+  </div>
+  
+  <div *ngIf="showPopup" class="error-popup">
+    {{ errorMessage }}
+  </div>
+  
+  <div *ngIf="showSuccessPopup" class="popup-success">
+    {{ successMessage }}
+  </div>
+

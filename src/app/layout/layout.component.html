@@ -1,0 +1,135 @@
+<div class="layout"div>
+    <div class="header-container">
+        <mat-card class="logo-card">
+            <img mat-card-image src="../../assets/images/millenium.JPG" alt="logo" style="opacity: 0.7;" />
+        </mat-card>
+        <mat-card class="greating">
+          <h1 class="mat-display-1">{{ userName }}  {{ userLastName }} - {{ businessEntityName }} </h1> 
+        </mat-card>
+          <mat-icon class="logout-icon" (click)="openLogoutDialog()">logout</mat-icon>
+        <button mat-mini-fab class="left-button"  color="warn" >{{ userName.charAt(0) }}{{ userLastName.charAt(0) }}</button>  
+    </div>
+    <div class="menu-container" layout="row">
+      <button mat-icon-button (click)="toggleSidenav()" [disabled]="secMenu[0] == 'Y'">
+        <mat-icon class="panel-icon" style="color:rgb(135, 48, 48);font-size: 10px;width: 10px; height: 10px;" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">flutters</mat-icon>
+      </button>
+        <button mat-flat-button routerLink="/dashboard" class="layout_menu_button" >Dashboard</button>
+        <button mat-flat-button  routerLink="/aboutus" class="layout_menu_button" *ngIf="false">About Us</button>
+        <button mat-flat-button  routerLink="/contactus" class="layout_menu_button" *ngIf="false">Contact Us</button>
+    
+        <button class="left-button" mat-icon-button [matMenuTriggerFor]="menu">
+            <mat-icon>menu</mat-icon>
+        </button>
+
+    </div>
+
+   <mat-menu #menu="matMenu">
+    <button mat-menu-item [matMenuTriggerFor]="adminMenu" [disabled]="secMenu[0] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">shield_person</mat-icon>
+      <span>Admin</span>
+    </button>
+    <button mat-menu-item routerLink="/patients" [disabled]="secMenu[7] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">Group</mat-icon>
+      <span>Patients</span>
+    </button>
+    <button mat-menu-item routerLink="/reports" [disabled]="secMenu[8] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">clinical_notes</mat-icon>
+      <span>Reports</span>
+    </button>
+  </mat-menu>
+  
+  <mat-menu #adminMenu="matMenu">
+    <button mat-menu-item routerLink="/company" [disabled]="secMenu[1] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;" >admin_panel_settings</mat-icon>
+      <span>Company</span>
+    </button>
+    <button mat-menu-item routerLink="/facilities" [disabled]="secMenu[2] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">business</mat-icon>
+      <span>Facilities</span>
+    </button>
+    <button mat-menu-item routerLink="/providers" [disabled]="secMenu[3] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">medical_information</mat-icon>
+      <span>Providers</span>
+    </button>
+    <button mat-menu-item routerLink="/law_firm" [disabled]="secMenu[4] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">demography</mat-icon>
+      <span>Law Offices</span>
+    </button>
+    <button mat-menu-item routerLink="/insurance" [disabled]="secMenu[5] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">payments</mat-icon>
+      <span>Insurance</span>
+    </button>
+    <button mat-menu-item routerLink="/miscellaneous" [disabled]="secMenu[6] == 'Y'">
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 200;">settings</mat-icon>
+      <span>Miscellaneous</span>
+    </button>
+  </mat-menu>
+
+  <div class="sidenav-container"> 
+    <mat-sidenav #sidenav mode="push"[(opened)]="isSidenavOpen" position="start" style="margin-top: 90px; height: 90%; width: 70px;background-color: whitesmoke;" (click)="toggleSidenav()">
+      <mat-nav-list>
+        <mat-list-item>
+          <button mat-menu-item routerLink="/patients" matTooltip="Patients" matTooltipPosition="right" [disabled]="secMenu[7] == 'Y'">
+            <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">Group</mat-icon>
+          </button>
+        </mat-list-item>
+        <mat-list-item>
+          <button mat-menu-item routerLink="/reports" matTooltip="Reports" matTooltipPosition="right" [disabled]="secMenu[8] == 'Y'">
+            <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">clinical_notes</mat-icon>
+          </button>
+        </mat-list-item>
+        <mat-list-item>
+          <button mat-menu-item routerLink="/company" matTooltip="Company" matTooltipPosition="right" [disabled]="secMenu[1] == 'Y'">
+            <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">admin_panel_settings</mat-icon>
+          </button>
+        </mat-list-item>
+        <mat-list-item>
+            <button mat-menu-item routerLink="/facilities" matTooltip="Facilities" matTooltipPosition="right" [disabled]="secMenu[2] == 'Y'">
+              <mat-icon class="add-icon" style="color:whitesmoke;" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">business</mat-icon>
+            </button> 
+         </mat-list-item>
+         <mat-list-item>
+          <button mat-menu-item routerLink="/providers" matTooltip="Providers" matTooltipPosition="right" [disabled]="secMenu[3] == 'Y'">
+            <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">medical_information</mat-icon>
+          </button>
+      </mat-list-item>
+      <mat-list-item>
+          <button mat-menu-item routerLink="/law_firm" matTooltip="Law Offices" matTooltipPosition="right" [disabled]="secMenu[4] == 'Y'">
+            <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">demography</mat-icon>
+          </button>
+      </mat-list-item>
+
+      <mat-list-item>
+        <button mat-menu-item routerLink="/insurance" matTooltip="Insurance" matTooltipPosition="right" [disabled]="secMenu[5] == 'Y'">
+          <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">payments</mat-icon>
+        </button>
+    </mat-list-item>
+
+      <mat-list-item>
+      <button mat-menu-item routerLink="/miscellaneous" matTooltip="Miscellaneous" matTooltipPosition="right" [disabled]="secMenu[6] == 'Y'">
+            <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">settings</mat-icon>
+          </button>
+        </mat-list-item>
+      </mat-nav-list>
+    </mat-sidenav>
+  </div>
+  <div class="content">
+    <router-outlet (activate)="onActivate($event)"></router-outlet>
+  </div>
+  <mat-drawer-container class="example-container" autosize>
+    <mat-drawer #drawer class="example-sidenav" mode="side">
+      <p>Auto-resizing sidenav</p>
+      <div *ngIf="isSidenavOpen">
+    
+      <button (click)="isSidenavOpen = !isSidenavOpen" mat-raised-button>
+        Toggle extra text
+      </button>
+      </div>
+    </mat-drawer>
+ 
+  </mat-drawer-container>
+
+</div>
+
+
+

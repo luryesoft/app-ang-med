@@ -1,0 +1,22 @@
+
+<div style="font-size: small; margin-left: 20px;margin-top: 1rem; ">
+
+    In a well-structured application, SQL queries, including SELECT statements,
+    should not be placed directly in the routes. <br>Instead, they should be encapsulated
+    within the models or services. This approach promotes separation of concerns, <br>
+    making your code more modular, maintainable, and testable.<br>
+    <strong><em>Here's a breakdown of where different parts of your code should reside:</em></strong><br>
+    <strong>1.Routes:</strong> Handle HTTP requests and responses. They should call the appropriate service methods <br>
+    to perform business logic and database operations.<br>
+    <strong>2.Controllers:</strong> (optional but recommended for larger applications): Act as intermediaries between <br>
+    the routes and services. They handle request validation, call service methods, and format the response.<br>
+    <strong>3.Services:</strong> Contain business logic and interact with the models to perform database operations.<br>
+    <strong>4.Models:</strong> Define the database schema and contain methods for interacting with the database (e.g., SQL queries).   
+</div>   
+<!--
+<div class="mat-display-1">
+    Display 1 Text
+</div>
+-->
+
+

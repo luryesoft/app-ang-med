@@ -1,0 +1,152 @@
+<div class="container">
+    <div class="left-panel">
+  
+      <div class="law-office-header-details" style="background-color:#dcdcdc">
+        Law Offices
+  
+  
+        <mat-form-field class="search-input small-form-field" appearance="outline" style="font-size: 10px;">
+          <mat-label>Filter by Office name</mat-label>
+          <input matInput type="text" 
+            placeholder="Filter by Law Office name"
+            [(ngModel)]="filterQuery" 
+            (keyup)="filterLawOffices(); $event.key === 'Enter' && filterLawOffices()">
+        <!--  <mat-icon matSuffix class="search-icon">search</mat-icon> -->
+        </mat-form-field>
+  
+  
+  
+        <mat-icon class="add-icon" matTooltip="Add a new Law Office" (click)="switchToAddMode()">playlist_add</mat-icon>
+      </div>
+  
+  
+        <div *ngFor="let lawOffice of filteredLawOffices" 
+        class="law-office-item" 
+        [ngClass]="{'selected': selectedLawOffice === lawOffice}"
+        (click)="selectLawOffice(lawOffice)">
+        <div class="law-office-row" 
+          [ngClass]="{'selected': selectedLawOffice === lawOffice}"
+          matTooltip="{{ lawOffice.lw_address_tx }}, {{ lawOffice.lw_city}}" 
+          matTooltipPosition="below">
+          <span class="law-office-name"
+          [ngClass]="{'inactive-office': lawOffice.active_in === 'N'}"
+          >{{ lawOffice.lw_nm }}
+          </span>
+          <span (click)="confirmAndDeleteLawOffice(lawOffice.lw_id)"
+            class="delete-icon">
+            <mat-icon fontSet="material-symbols-outlined" class="delete-icon" style="font-variation-settings: 'wght' 300;">delete</mat-icon>
+          </span>
+        </div>
+      </div>
+    </div>
+  
+    <div class="right-panel">
+  
+      <div class="law-office-details" style="background-color:#dcdcdc">
+      
+        {{ isEditMode ? 'Edit Law Office' : 'Add New Law Office' }}
+        <p><mat-slide-toggle 
+          *ngIf="lawOfficeForm.value.lw_nm"
+          labelPosition="before" 
+          [(ngModel)]="isActive"
+          style="color: green;"
+                  (change)="onToggleChange($event)">Status {{ isActive ? 'Active' : 'Inactive' }}</mat-slide-toggle></p>
+        <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">demography</mat-icon>
+  
+      </div>
+      <ng-container *ngIf="!isEditMode || selectedLawOffice; else noSelection">
+        <form [formGroup]="lawOfficeForm" (ngSubmit)="onSubmit()">
+          <div class="row1">
+            <div class="col-md-6">
+              <mat-form-field appearance="fill" class="long-column">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="lw_nm" required>
+              </mat-form-field>
+              <mat-form-field appearance="fill" class="form-field">
+                <mat-label>EIN Number</mat-label>
+                <input matInput formControlName="lw_ein" maxlength="250">
+              </mat-form-field>
+              <mat-form-field appearance="fill" class="form-field">
+                <mat-label>NPI Number</mat-label>
+                <input matInput formControlName="lw_npi" maxlength="100">
+              </mat-form-field>
+            </div>
+          </div>
+  
+          <div class="row3">
+            <div class="col-md-6">
+              <mat-form-field appearance="fill" class="long-column">
+                <mat-label>Address</mat-label>
+                <input matInput formControlName="lw_address_tx" required>
+              </mat-form-field>
+  
+              <mat-form-field appearance="fill" class="form-field">
+                <mat-label>City</mat-label>
+                <input matInput formControlName="lw_city" required>
+              </mat-form-field>
+  
+              <mat-form-field appearance="fill" class="short-column">
+                <mat-label>State</mat-label>
+                <input matInput formControlName="lw_state" maxlength="2" appUppercase required>
+              </mat-form-field>
+  
+              <mat-form-field appearance="fill" class="short-column">
+                <mat-label>Zip Code</mat-label>
+                <input matInput formControlName="lw_zip_cd" required>
+              </mat-form-field>
+            </div> 
+          </div>
+  
+          <div class="row2">
+            <div class="col-md-6">
+              <mat-form-field appearance="fill" class="long-column">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="lw_email">
+                <mat-error *ngIf="lawOfficeForm.get('lw_email')?.hasError('required')">
+                  Email is required.
+                </mat-error>
+                <mat-error *ngIf="lawOfficeForm.get('lw_email')?.hasError('email')">
+                  Please enter a valid email address.
+                </mat-error>               
+              </mat-form-field>
+              <mat-form-field appearance="fill" class="form-field">
+                <mat-label>Phone</mat-label>
+                <input matInput formControlName="lw_phone" required>
+              </mat-form-field>
+            </div>
+          </div>
+  
+          <mat-form-field appearance="fill" style="display: none;">
+            <mat-label>Active</mat-label>
+            <input matInput formControlName="active_in" >
+          </mat-form-field>
+  
+          <div class="icon-checkbox" (click)="toggleCheck()" style="display: none;">
+            <span class="icon-checkbox-text">Is Law Office Active:  </span>
+            <mat-icon>
+              {{ isIconChecked ? 'check_box' : 'check_box_outline_blank' }}
+            </mat-icon>  
+          </div>
+  
+          <div>
+            <button mat-raised-button color="primary" type="submit" class="submit-button" >
+              {{ isEditMode ? 'Update Law Office' : 'Add Law Office' }}
+            </button>
+          </div>
+        </form>
+      </ng-container>
+      <ng-template #noSelection>
+        <p class="no-selection-message" style="font-weight: 200;">
+          {{ isEditMode ? 'Select a law office from the list to view details.' : '' }}
+        </p>
+      </ng-template>
+    </div>
+  </div>
+  
+  <div *ngIf="showPopup" class="error-popup">
+    {{ errorMessage }}
+  </div>
+  
+  <div *ngIf="showSuccessPopup" class="popup-success">
+    {{ successMessage }}
+  </div>

@@ -1,0 +1,89 @@
+
+.background-container{
+  position: absolute;
+}
+
+.login-container {
+    position: absolute;
+    z-index: 1;
+    top: 30%;
+    left: 40%;
+    width: 20%;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-container {
+    width: 500px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.error-message {
+    color: rgb(225, 84, 84);
+    margin-top: 15px;
+}
+
+.popup1 {
+    margin-top: 5px;
+    position: fixed;
+    top: 1px;
+    right: -70px;
+    transform: translateX(-50%);
+    background-color: #FF5100;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+  label {
+    display: block;
+    margin-bottom: 3px;
+    font-family: inherit;
+    font-weight: small; /* Change to your desired font weight */
+    color: rgba(68, 52, 214, 0.87);
+  }
+  
+  input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    margin-bottom: 5px;
+  }
+
+  
+  
+  button {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: #0b54a2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px; 
+  }
+  
+  button:disabled {
+    background-color: #ccc;
+  }
+
+  :host ::ng-deep .error-popup {
+    right: -30px;
+    background-color: #ff5100fa; // This will override the global style
+    color: white;
+    width: 200px;
+    font-size: 24px;
+    padding: 10px;
+    text-align: center; 
+  }
+  

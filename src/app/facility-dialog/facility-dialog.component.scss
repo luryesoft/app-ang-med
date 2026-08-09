@@ -1,0 +1,81 @@
+:host {
+    display: block;
+    width: 100%;
+    height: 650px;
+  }
+  
+  .dialog-title {
+    margin: 0;
+    padding: 16px;
+    background-color: white;
+    color: #5e5151;
+    text-align: center;
+    height: 750;
+  }
+  
+  .dialog-content {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .scrollable-content {
+    width: 90%;
+    height: 500px;
+    overflow-y: auto; // Allows scrolling if content exceeds available space
+    overflow-x: hidden;
+  }
+
+
+ .facility-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0; // Optional: Add some padding for better spacing
+    transition: background-color 0.3s;
+    width: 100%;
+    color: black;
+  }
+
+.checkbox-style {
+  background-color: transparent;
+}
+
+.facility-item:hover {
+  background-color: #f0f0f0; // Change to your desired hover color
+  }
+
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px;
+  }
+
+  .confirm-button {
+    margin: 0 10px; 
+    border-radius: 3px;
+    border: 0.5px solid #746464;
+    padding: 5px 10px;
+    width: 100px;
+    background-color: gray;
+    color: white;
+  }
+
+  .cancel-button {
+    margin: 0 10px; 
+    border-radius: 3px;
+    border: 0.5px solid #746464;
+    padding: 5px 10px;
+    width: 100px;
+  }
+
+  .facility-item:hover .facility-text {
+    color: blue; /* Change this to your desired hover color */
+  }
+  
+  .facility-item:hover  {
+    color: blue; /* Ensure the small text also changes color */
+  }
+
+  

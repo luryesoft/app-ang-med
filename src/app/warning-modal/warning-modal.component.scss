@@ -1,0 +1,27 @@
+.dialog-title {
+  font-size: 20px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 10px; 
+  height: 50px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+}
+.dialog-actions button {
+  margin: 0 10px; 
+  border-radius: 3px;
+  border: 0.5px solid #746464;
+  padding: 5px 5px;
+  width: 100px;
+  height: 30px;
+}
+
+.dialog-content {
+  text-align: center;
+  vertical-align: middle;
+  margin-top: 0;
+  height: 15px;
+}

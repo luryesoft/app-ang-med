@@ -1,0 +1,32 @@
+<div class="background-container" style="background-image: url('/assets/images/med_background.jpg'); background-size: cover; background-position: center; width: 100%; height: 100%;"> 
+
+  <div class="login-container">
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div>
+        <label for="userId">User ID</label>
+        <input id="userId" formControlName="userId" type="text">
+        <div *ngIf="loginForm.controls['userId'].invalid && (loginForm.controls['userId'].dirty || loginForm.controls['userId'].touched)">
+          <small class="error-message" *ngIf="loginForm.controls['userId'].errors?.['required']">User ID is required.</small>
+          <small class="error-message" *ngIf="loginForm.controls['userId'].errors?.['email']">Enter a valid User ID.</small>
+        </div>
+      </div>
+
+      <div>
+        <label for="password">Password</label>
+        <input id="password" formControlName="password" type="password">
+        <div *ngIf="loginForm.controls['password'].invalid && (loginForm.controls['password'].dirty || loginForm.controls['password'].touched)">
+          <small class="error-message" *ngIf="loginForm.controls['password'].errors?.['required']">Password is required.</small>
+          <small class="error-message" *ngIf="loginForm.controls['password'].errors?.['minlength']">Password must be at least 6 characters long.</small>
+        </div>
+      </div>
+ 
+      <button type="submit" [disabled]="loginForm.invalid">Login</button>
+      
+    </form>
+  </div>
+    <div *ngIf="showPopup" class="error-popup">
+      {{ errorMessage }}
+
+    </div>
+  

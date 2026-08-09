@@ -1,0 +1,161 @@
+<div class="container">
+  <div class="left-panel">
+
+    <div class="facility-header-details" style="background-color:#dcdcdc">
+      Facilities
+
+
+      <mat-form-field class="search-input small-form-field" appearance="outline" >
+        <mat-label>Filter by facility name</mat-label>
+        <input matInput type="text" 
+          placeholder="Filter by facility name"
+          [(ngModel)]="filterQuery" 
+          (keyup)="filterFacilities(); $event.key === 'Enter' && filterFacilities()">
+      <!--  <mat-icon matSuffix class="search-icon">search</mat-icon> -->
+      </mat-form-field>
+
+
+
+      <mat-icon class="add-icon" matTooltip="Add a new facility" (click)="switchToAddMode()">playlist_add</mat-icon>
+    </div>
+
+
+    <div *ngFor="let facility of filteredFacilities" 
+    class="facility-item" 
+    [ngClass]="{'selected-facility': selectedFacility === facility}"
+    (click)="selectFacility(facility)">
+      <div class="facility-row"
+        [ngClass]="{'inactive-facility': facility.active_in === 'N'}" 
+        matTooltip="{{ facility.facility_address_tx }}, {{ facility.facility_city }}" 
+        matTooltipPosition="below">
+        <span class="facility-name">{{ facility.facility_nm }}
+        </span>
+        <span (click)="confirmAndDeleteFacility(facility.facility_id)"
+          class="delete-icon">
+          <mat-icon fontSet="material-symbols-outlined" 
+          class="delete-icon" 
+          [ngClass]="{'selected-icon': selectedFacility === facility}"
+          style="font-variation-settings: 'wght' 300;">delete</mat-icon>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+
+    <div class="facility-details" style="background-color:#dcdcdc">
+    
+      {{ isEditMode ? 'Edit Facility' : 'Add New Facility' }}
+      <p><mat-slide-toggle 
+        *ngIf="facilityForm.value.facility_nm"
+        labelPosition="before" 
+        [(ngModel)]="isActive"
+        style="color: green;"
+                (change)="onToggleChange($event)">Status {{ isActive ? 'Active' : 'Inactive' }}</mat-slide-toggle></p>
+      <mat-icon class="add-icon" style="color:rgb(122, 106, 106);">business</mat-icon>
+    </div>
+    <ng-container *ngIf="!isEditMode || selectedFacility; else noSelection">
+      <form [formGroup]="facilityForm" (ngSubmit)="onSubmit()">
+        <div class="row1">
+          <div class="col-md-6">
+            <mat-form-field appearance="fill" class="long-column">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="facility_nm" required>
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="form-field">
+              <mat-label>Federal Tax ID Number</mat-label>
+              <input matInput formControlName="facility_tin" maxlength="250">
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="form-field">
+              <mat-label>NPI Number</mat-label>
+              <input matInput formControlName="facility_npi" maxlength="100">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="row3">
+          <div class="col-md-6">
+            <mat-form-field appearance="fill" class="long-column">
+              <mat-label>Address</mat-label>
+              <input matInput formControlName="facility_address_tx" required>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="form-field">
+              <mat-label>City</mat-label>
+              <input matInput formControlName="facility_city" required>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="short-column" >
+              <mat-label>State</mat-label>
+              <input matInput formControlName="facility_state" maxlength="2" appUppercase required>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="short-column">
+              <mat-label>Zip Code</mat-label>
+              <input matInput formControlName="facility_zip_cd" required>
+            </mat-form-field>
+          </div> 
+        </div>
+
+        <div class="row2">
+          <div class="col-md-6">
+            <mat-form-field appearance="fill" class="long-column">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="facility_email">
+              <mat-error *ngIf="facilityForm.get('facility_email')?.hasError('required')">
+                Email is required.
+              </mat-error>
+              <mat-error *ngIf="facilityForm.get('facility_email')?.hasError('email')">
+                Please enter a valid email address.
+              </mat-error>               
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="form-field">
+              <mat-label>Phone</mat-label>
+              <input matInput formControlName="facility_phone" required>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="form-field1">
+              <mat-label>Facility Type</mat-label>
+              <mat-select formControlName="facility_type_id" class="custom-dropdown" required (selectionChange)="logFacilityTypeName()">
+                <mat-option *ngFor="let typeq of facilityTypes" [value]="typeq.facility_type_id">
+                  {{ typeq.facility_type_nm }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <mat-form-field appearance="fill" style="display: none;">
+          <mat-label>Active</mat-label>
+          <input matInput formControlName="active_in" >
+        </mat-form-field>
+
+        <div class="icon-checkbox" (click)="toggleCheck()" style="display: none;">
+          <span class="icon-checkbox-text">Is Facility Active:  </span>
+          <mat-icon>
+            {{ isIconChecked ? 'check_box' : 'check_box_outline_blank' }}
+          </mat-icon>  
+        </div>
+
+        <div>
+          <button mat-raised-button color="primary" type="submit" class="submit-button" >
+            {{ isEditMode ? 'Update Facility' : 'Add Facility' }}
+          </button>
+        </div>
+      </form>
+    </ng-container>
+    <ng-template #noSelection>
+      <p class="no-selection-message">
+        {{ isEditMode ? 'Select a facility from the list to view details.' : '' }}
+      </p>
+    </ng-template>
+  </div>
+</div>
+
+<div *ngIf="showPopup" class="error-popup">
+  {{ errorMessage }}
+</div>
+
+<div *ngIf="showSuccessPopup" class="popup-success">
+  {{ successMessage }}
+</div>

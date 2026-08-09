@@ -1,0 +1,19 @@
+<h2 mat-dialog-title class="dialog-title">{{ data.title || 'Make your choice.' }}</h2>
+<div mat-dialog-content class="dialog-content">
+  <div class="scrollable-content">
+  <div *ngFor="let facility of facilities" class="facility-item"> <!-- Add a class for styling -->
+    <span>{{ facility.facility_nm }}
+      <br>
+      <small>{{ facility.facility_address_tx }} {{ facility.facility_address_2_tx }}</small> 
+    </span> <!-- Facility name -->
+    <mat-checkbox class="checkbox-style"
+      [checked]="selectedFacilities.has(facility.facility_id)" 
+      (change)="toggleSelection(facility.facility_id)">
+    </mat-checkbox>
+  </div>
+  </div>
+</div>
+<div mat-dialog-actions class="dialog-actions">
+  <button mat-button class="confirm-button" (click)="confirmSelection()">Confirm</button>
+  <button mat-button class="cancel-button" (click)="dialogRef.close()">Cancel</button>
+</div>

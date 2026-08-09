@@ -1,0 +1,255 @@
+<div class="container">
+    <!-- Search Section -->
+      <mat-card class="search">
+
+
+        <mat-card-content>
+        
+          <div class="search-panel">
+              <input matInput 
+              id="search" 
+              type="search" 
+              [placeholder]="searchPlaceholder" 
+              [(ngModel)]="searchQuery" class="search-input"
+              (input)="onSearchInputChange()"
+              >
+            <button mat-icon-button aria-label="Search" (click)="searchProviders()" class="search-button" style="color:white;">
+              <mat-icon fontSet="material-symbols-outlined" >search</mat-icon>
+            </button>
+ 
+          </div>
+
+      </mat-card-content>
+      <div *ngIf="searchInitiated &&searchQuery && providers.length === 0" class="no-results">
+        <p style="color:red;font-weight:bold;">No results, please try a different search.</p>
+      </div> 
+      </mat-card>
+  
+    <div class="panel-container">
+      <!-- Left Panel -->
+      <div class="left-panel" >
+        <div class="full-width-list">
+          <div class="provider-details" style="background-color:#dcdcdc">
+            <span class="title-name">Providers</span>
+            <span class="title-specialty">Credentials</span>
+            <mat-icon class="add-icon" (click)="switchToAddMode()">playlist_add</mat-icon>
+          </div>
+          <div class="provider-item" *ngFor="let provider of providers" 
+          [ngClass]="{'selected-provider': provider === selectedProvider, 'disabled-provider': provider.active_in !== 'Y'}" 
+          (click)="selectProvider(provider)">
+     
+            <div class="provider-info row">
+              <span class="provider-name">{{ provider.provider_nm }}</span>
+              <span class="provider-specialty">{{ provider.provider_credentials || 'No Specialty' }}</span>
+              <span class="provider-status">
+              </span>
+
+              <span (click)="confirmAndDeleteProvider(provider)" class="delete-icon">
+                <mat-icon fontSet="material-symbols-outlined" 
+                [ngClass]="{'selected-icon': selectedProvider === provider}"
+                class="delete-icon" style="font-variation-settings: 'wght' 200;">delete_outline</mat-icon>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Right Panel -->
+       
+      <div class="right-panel" >
+        <div class="provider-details" style="background-color:#dcdcdc">
+          {{ isEditMode ? 'Edit Provider' : 'Add New Provider' }}
+          <div *ngIf="!isFormComplete()">
+            <p class="error-message" style="color:red;">  Please fill in all required fields.  </p>
+          </div>
+          <p><mat-slide-toggle class="custom-slider"
+          labelPosition="before"
+          [checked]="selectedProvider && selectedProvider.active_in === 'Y'"
+          (change)="onToggleChange($event, providerForm.value)">Status {{ selectedProvider && selectedProvider.active_in === 'Y' ? 'Active' : 'Inactive' }}</mat-slide-toggle></p>
+
+          <mat-icon class="add-icon" style="color:rgb(122, 106, 106);" class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;" (click)="checkFormDirty(providerForm)">medical_information</mat-icon>
+        </div>
+
+          <ng-container *ngIf="!isEditMode || selectedProvider; else noSelection">
+            <form [formGroup]="providerForm" (ngSubmit)="onSubmit()">
+
+              <div class="row">
+                <div class="row-wrapper">
+
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>Provider First Name</mat-label>
+                  <input matInput formControlName="provider_first_nm" required>
+                  <mat-error *ngIf="providerForm.get('provider_first_nm')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>Provider Last Name</mat-label>
+                  <input matInput formControlName="provider_last_nm" required>
+                  <mat-error *ngIf="providerForm.get('provider_last_nm')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>  
+
+
+                  <mat-form-field appearance="fill" 
+                  class="form-field" 
+                  [matTooltip]="getSelectedSpecialtyName()"
+                  matTooltipPosition="right">
+                    <mat-label>Specialty</mat-label>
+                    <mat-select formControlName="provider_specialty_id" required >
+                    <mat-option *ngFor="let specialty of specialties" [value]="specialty.specialty_id" >
+                      {{ specialty.specialty_nm }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="providerForm.get('provider_specialty_id')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="short-column">
+                  <mat-label>Credentials</mat-label>
+                  <input matInput formControlName="provider_credentials" required>
+                  <mat-error *ngIf="providerForm.get('provider_credentials')?.hasError('required')">
+                    required.
+                  </mat-error>
+                </mat-form-field>
+                
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="row-wrapper">
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>TIN</mat-label>
+                  <input matInput formControlName="provider_tin" >
+                  <mat-error *ngIf="providerForm.get('provider_tin')?.hasError('pattern')">
+                    Please enter a valid TIN.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>NPI</mat-label>
+                  <input matInput formControlName="provider_npi" >
+                  <mat-error *ngIf="providerForm.get('provider_npi')?.hasError('pattern')">
+                    Please enter a valid NPI.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>License Number</mat-label>
+                  <input matInput formControlName="provider_license_no" >
+                  <mat-error *ngIf="providerForm.get('provider_license_no')?.hasError('pattern')">
+                    License Number is required.
+                  </mat-error>
+                </mat-form-field>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="row-wrapper">
+
+                  <mat-form-field appearance="fill" 
+                  class="form-field" 
+                  [matTooltip]="getSelectedProviderTypeName()"
+                  matTooltipPosition="right">
+                    <mat-label>Provider Type</mat-label>
+                    <mat-select formControlName="provider_type_id" required>
+                      <mat-option *ngFor="let type of providerTypes" [value]="type.provider_type_id">
+                        {{ type.provider_type_nm }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="providerForm.get('provider_type_id')?.hasError('required')">
+                      Provider Type is required.
+                    </mat-error>
+                  </mat-form-field>
+
+
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label>Phone</mat-label> 
+                  <input matInput formControlName="provider_phone" required>
+                  <mat-error *ngIf="providerForm.get('provider_phone')?.hasError('pattern')">
+                    Phone is required.
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="long-column">
+                  <mat-label>Email</mat-label>
+                  <input matInput formControlName="provider_email" required>
+                    <mat-error *ngIf="providerForm.get('provider_email')?.hasError('email')">
+                      Please enter a valid email address.
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+              <mat-form-field appearance="fill" class="long-column" style="display:none;">
+                <mat-label>Status</mat-label>
+                <input matInput formControlName="active_in" required>
+                  <mat-error *ngIf="providerForm.get('active_in')?.hasError('email')">
+                    Please enter a valid email address.
+                  </mat-error>
+                </mat-form-field>
+                
+              <div class="row">
+                <button mat-raised-button color="primary" type="submit">
+                  {{ isEditMode ? 'Update Provider' : 'Add Provider' }}
+                </button>
+              </div>
+            </form>
+
+          </ng-container>
+          <div class="facility-header" style="background-color:#dcdcdc">
+            <div style="display: flex; align-items: center;" >
+              <h3 class="facility-title">Facilities</h3>
+              <div *ngIf="isFormComplete() && isProviderFacility === false" style="text-align: center;">
+              <p style="color:red;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Providers must be assigned to one or more facilities. Please add a facility.
+            </div>
+            </div>
+            <mat-icon 
+            *ngIf="isFormComplete()"
+            class="add-icon" 
+            matTooltip="Add a new facility" 
+            (click)="openFacilityDialog()"
+            >
+              playlist_add
+            </mat-icon>
+        </div>  
+        <div class="facilities-panel">          
+          <div class="facility-cards">
+              <div *ngFor="let facility of facilities" class="facility-card">
+                <mat-card>
+                  <mat-card-content>
+                    <div class="facility-card-header">
+                    <span class="facility-cards_header">{{ facility.facility_nm }}</span  >
+                    <mat-icon fontSet="material-symbols-outlined" class="delete-facility-icon" style="font-variation-settings: 'wght' 200;"(click)="confirmAndDeleteFacility(facility.facility_id)">delete_outline</mat-icon>
+                    </div>
+                    <p class="facility-cards_line">{{ facility.facility_address_tx }}</p>
+                    <p class="facility-cards_line">{{ facility.facility_address_tx_2 }}</p>
+                    <p class="facility-cards_line">{{ facility.facility_type_nm }}</p>
+                  </mat-card-content>
+                </mat-card>
+                <mat-error *ngIf="providerForm.get('facility_id')?.hasError('required')">
+                  Facility is required.
+                </mat-error>
+              </div>
+            </div>
+        </div>
+
+          <ng-template #noSelection>
+
+            <p class="no-selection-message">
+              {{ isEditMode ? 'Select a provider from the list to view details or add a new provider' : '' }}
+            </p>
+          </ng-template>
+      </div>
+    </div>
+  </div>
+ 
+  <div *ngIf="showPopup" class="error-popup">
+    {{ errorMessage }}
+  </div>
+  
+  <div *ngIf="showSuccessPopup" class="popup-success">
+    {{ successMessage }}
+  </div>

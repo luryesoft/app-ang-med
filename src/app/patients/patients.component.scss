@@ -1,0 +1,160 @@
+
+//.ptn_details_hdr {
+ // background-color: #f5f5f5;
+//}
+
+mat-panel-description {
+  display: flex;
+  align-items: center;
+}
+
+mat-icon {
+  margin-left: 8px;
+  transition: transform 0.3s;
+  margin-left: auto; 
+}
+
+.ptn_search_hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    margin-left: 10px;
+    height: 30px;
+    width: 98%;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+}
+.ptn_search_hdr_txt {
+    font-weight: bold;
+    margin-right: 10px;
+}
+.ptn_search_hdr_left {
+    margin-left: 10px;
+    margin-right: 10px;
+    font-weight: bold;
+}
+.search-dropdown input {
+    text-transform: uppercase;
+  }
+
+  .search-input {
+    height: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 5px;
+    width: 200px;
+    font-size: 10px;
+  }
+
+
+.search-dropdown {
+    position: relative;
+  }
+
+  .dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Ensure this is higher than other elements */
+    background-color: white;
+    border: 1px solid #ccc;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 250px;
+  }
+ 
+.dropdown-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.dropdown-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.add-icon {
+  margin-left: 10px;
+  margin-right: 10px;
+} 
+.span-ptn_id {
+  margin-left: 5px;
+  font-weight: lighter;
+}
+
+.ptn_search_hdr_icons {
+  margin-left: auto; 
+  display: flex;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.thick-divider {
+  height: 2px; /* Set the desired thickness */
+  background-color: #f5f5f5; /* Optional: Set a custom color */
+  margin-bottom: 10px;
+}
+  .ptn_details {
+    margin-top: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+   // height: 30px;
+    width: 98%;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .ptn_details_hdr {
+    font-weight: bold;
+    color:blue;
+    margin-right: 5px;
+    margin-left: 15px;
+  }
+    .form-field {
+      margin-left: 10px;
+      margin-right: 10px;
+      text-transform: uppercase;
+    }
+  .form-label {
+    margin-left: 3px;
+    color: blue;
+    font-size: 12px;
+  }
+
+  .form-label input {
+    text-transform: uppercase;
+  }
+
+  .btn-update {
+    margin-left:50px;
+    margin-right: 10px;
+  }
+
+  .error-popup {
+    position: fixed;
+    right: 20px;
+
+  }
+ .popup-success {
+    position: fixed;
+    right: 20px;
+ }
+ .error-message{
+  font-size: 12px;
+  text-transform: lowercase;
+  margin-left: 1px;
+ }
+
+
+
+
+

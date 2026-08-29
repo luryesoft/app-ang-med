@@ -21,7 +21,6 @@
     "@angular/platform-browser-dynamic": "^18.2.6",
     "@angular/router": "^18.2.6",
     "@nestjs/typeorm": "^10.0.2",
-    "angular-oauth2-oidc": "^17.0.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "http-proxy-middleware": "^3.0.3",

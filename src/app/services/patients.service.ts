@@ -32,4 +32,8 @@ export class PatientSearchService {
   insertPatient(argmessage: any): Observable<{ returncd: number; returntx: string }> {
     return this.http.post<{ returncd: number; returntx: string }>(`${this.apiUrl}/insert_ptn`, argmessage);
   }
+
+  getLookups(): Observable<{ lawyers: any[]; insurances: any[] }> {
+    return this.http.get<{ lawyers: any[]; insurances: any[] }>(`${this.apiUrl}/lookups`);
+  }
 }

@@ -33,7 +33,7 @@ export class AppComponent implements OnInit {
     this.globalService.userName = this.userName;
     this.userLastName = this.globalService.getUserLastName();
     this.globalService.userLastName = this.userLastName;
-    this.globalService.isLoggedIn = true;
+    this.islogged = this.globalService.getLoginStatus();
     this.companyid = this.globalService.getCompanyId();
     this.globalService.companyId  =  this.companyid;
     this.userId = this.globalService.getUserId();

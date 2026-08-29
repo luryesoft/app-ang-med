@@ -12,6 +12,7 @@
               [placeholder]="searchPlaceholder" 
               [(ngModel)]="searchQuery" class="search-input"
               (input)="onSearchInputChange()"
+              (keydown.enter)="searchProviders()"
               >
             <button mat-icon-button aria-label="Search" (click)="searchProviders()" class="search-button" style="color:white;">
               <mat-icon fontSet="material-symbols-outlined" >search</mat-icon>
@@ -39,7 +40,10 @@
           (click)="selectProvider(provider)">
      
             <div class="provider-info row">
-              <span class="provider-name">{{ provider.provider_nm }}</span>
+              <div class="provider-main">
+                <span class="provider-name">{{ provider.provider_nm }}</span>
+                <span class="provider-facility" *ngIf="provider.facility_nm">{{ provider.facility_nm }}</span>
+              </div>
               <span class="provider-specialty">{{ provider.provider_credentials || 'No Specialty' }}</span>
               <span class="provider-status">
               </span>

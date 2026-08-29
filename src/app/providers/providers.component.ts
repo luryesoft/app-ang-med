@@ -28,6 +28,7 @@ interface Provider {
   provider_email?: string;  
   entity_id?: number;
   active_in?: string;
+  facility_nm?: string;
 }
 
 export interface AddProvider {

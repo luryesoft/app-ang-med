@@ -9,7 +9,7 @@ import { UserloginComponent } from './userlogin/userlogin.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LayoutComponent } from './layout/layout.component';
 import { BusinessentityComponent } from './admin//businessentity/businessentity.component'; 
-import { HTTP_INTERCEPTORS, provideHttpClient } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,7 +51,6 @@ import { SsnMaskPipe } from './pipes/ssn-mask.pipe';
 import { NumericOnlyDirective } from './pipes/numeric-only.directive';
 import { NgxMaskDirective ,  provideNgxMask} from 'ngx-mask'; 
 import { JwtInterceptor } from './auth/jwt.interceptor';
-import { OAuthModule } from 'angular-oauth2-oidc'; 
 import { PdfComponent } from './pdfgen/pdfgen.component';
 
 
@@ -111,12 +110,10 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     MatDialogModule,
     MatButtonToggleModule,
     MatProgressSpinnerModule,
-    NgxMaskDirective,
-    OAuthModule.forRoot()
-   // RouterModule.forRoot([] )
+    NgxMaskDirective
   ],
   providers: [ 
-    provideHttpClient(),
+    provideHttpClient(withInterceptorsFromDi()),
     CanDeactivateGuard,
     provideNgxMask(),
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }

@@ -1,7 +1,5 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { Router } from '@angular/router';
-import { UserService } from '../services/user.service'; 
 
 @Component({
   selector: 'app-logout-dialog',
@@ -10,8 +8,6 @@ import { UserService } from '../services/user.service';
 })
 export class LogoutDialogComponent {
   constructor(
-    private router: Router,
-    private userService: UserService,
     private dialogRef: MatDialogRef<LogoutDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { title: string, message: string }
   ) {}
@@ -21,8 +17,6 @@ export class LogoutDialogComponent {
   }
 
   onLogout(): void {
-    this.userService.logout(); // Call the logout method from your AuthService
-    this.router.navigate(['/login']);
     this.dialogRef.close(true);
   }
 }

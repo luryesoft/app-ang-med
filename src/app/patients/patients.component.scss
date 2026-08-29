@@ -80,6 +80,12 @@ mat-icon {
   background-color: #f0f0f0;
 }
 
+.search-ptn-id {
+  color: #666;
+  font-size: 0.9em;
+  margin-left: 4px;
+}
+
 .add-icon {
   margin-left: 10px;
   margin-right: 10px;
@@ -153,6 +159,12 @@ mat-icon {
   text-transform: lowercase;
   margin-left: 1px;
  }
+
+.icon-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: default;
+}
 
 
 

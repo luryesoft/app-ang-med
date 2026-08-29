@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-//import { CommonModule } from '@angular/common';
-import { AuthService } from '../services/auth.service'; // Adjust this path as needed
+import { AuthService } from '../auth/auth.service';
 import { Router } from '@angular/router';
 import { GlobalService } from '../services/global.service';
 import { UserService } from '../services/user.service';
@@ -10,10 +9,6 @@ import { SharedDataService } from '../services/shared-data.service';
 
 @Component({
   selector: 'app-userlogin',
-  //standalone: true,
-  //imports: [CommonModule,
-  //          ReactiveFormsModule
-  //],
   templateUrl: './userlogin.component.html',
   styleUrl: './userlogin.component.scss'
 })
@@ -26,8 +21,8 @@ export class UserloginComponent implements OnInit {
     showPassword: boolean = false;
     businessEntityName: string = '';
 
-    constructor(private fb: FormBuilder, 
-                private authService: AuthService, 
+    constructor(private fb: FormBuilder,
+                private authService: AuthService,
                 private userService: UserService,
                 private router: Router,
                 private globalService: GlobalService,
@@ -37,76 +32,58 @@ export class UserloginComponent implements OnInit {
         password: ['', [Validators.required, Validators.minLength(6)]]
       });
     }
-  
+
     ngOnInit(): void {
-      // Initialization logic here if needed
     }
-    
+
     onSubmit(): void {
       if (this.loginForm.valid) {
         const loginDTO: LoginDTO = {
           userId: this.loginForm.value.userId,
           passWord: this.loginForm.value.password
         };
-        
-        this.userService.login(loginDTO).subscribe({
+
+        this.authService.login(loginDTO).subscribe({
           next: (response) => {
-         
-            if (response.message === 'Login successful') {
-              localStorage.setItem('authToken', response.accessToken);
-              console.log('Auth Token:', response.accessToken);
-              console.log('Login Successful!', response.user);
-              if (response.user) {
-                this.globalService.setUserId(response.user.user_id);
-                this.globalService.setUserName(response.user.user_first_name_tx);
-                this.globalService.setUserLastName(response.user.user_last_name_tx);
-                this.globalService.setIsLogged(true);
-                this.globalService.setCompanyId(response.user.company_id);
-                this.globalService.setEntityImage(response.user.base_url_tx);
+            if (!this.authService.isLoggedIn) {
+              this.showError(response?.message || 'Login succeeded but the session token is invalid.');
+              return;
+            }
 
-                // Call getBusinessEntityName with the company_id
-                  this.userService.getBusinessEntityName(response.user.company_id).subscribe({
-                  next: (response: string) => {
-                    this.businessEntityName = response;
-                    localStorage.setItem('businessEntityName', this.businessEntityName);
-                  }
-                  ,
-                  error: (err) => {
-                    // Handle error here
-                    console.error('Error fetching business entity name:', err);
-                  },
-                  complete: () => {
-                    // Handle completion here if needed
-                    this.globalService.setBusinessEntityName(this.businessEntityName);
-                    this.sharedDataService.setBusinessEntityName(this.businessEntityName);
-                    console.log('Login Get Business Entity Name:', this.businessEntityName );
-                  }
-                });
+            if (response.user) {
+              this.globalService.setUserId(response.user.user_id);
+              this.globalService.setUserName(response.user.user_first_name_tx);
+              this.globalService.setUserLastName(response.user.user_last_name_tx);
+              this.globalService.setIsLogged(true);
+              this.globalService.setCompanyId(response.user.company_id);
+              this.globalService.setEntityImage(response.user.base_url_tx);
 
-                    // Navigate to the dashboard after setting the business entity name
-                    //this.router.navigate(['/dashboard']);
-                    this.router.navigate(['/dashboard'], { queryParams: { businessEntityName: this.businessEntityName } });
-              } else {
-                console.error('User object is undefined');
-              }
-  
+              this.userService.getBusinessEntityName(response.user.company_id).subscribe({
+                next: (name: string) => {
+                  this.businessEntityName = name;
+                  this.globalService.setBusinessEntityName(this.businessEntityName);
+                  this.sharedDataService.setBusinessEntityName(this.businessEntityName);
+                },
+                error: (err) => {
+                  console.error('Error fetching business entity name:', err);
+                }
+              });
+
+              this.router.navigate(['/dashboard']);
             } else {
-              console.log('Login Not Successful', response);
-              this.errorMessage = response.message;
-              this.showPopup = true;
-              setTimeout(() => this.showPopup = false, 3000);               
+              this.showError('User object is undefined');
             }
           },
           error: (error: any) => {
-            console.error('Login failed', error);
-                   this.errorMessage = error.message;
-                    this.showPopup = true;
-                    setTimeout(() => this.showPopup = false, 3000); 
+            this.showError(error.message);
           }
         });
-
-        
       }
     }
 
-  }
+    private showError(message: string): void {
+      this.errorMessage = message;
+      this.showPopup = true;
+      setTimeout(() => this.showPopup = false, 3000);
+    }
+}

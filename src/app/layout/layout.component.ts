@@ -1,6 +1,5 @@
 import { Component , OnInit} from '@angular/core';
 import { GlobalService } from '../services/global.service';
-import { Router } from '@angular/router';
 import { MatMenu } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component';
@@ -43,8 +42,7 @@ interface SecMenuItem {
       this.isSidenavOpen = !this.isSidenavOpen;
     }
 
-    constructor(private globalService: GlobalService,  
-      private router: Router, 
+    constructor(private globalService: GlobalService,
       private dialog: MatDialog,
       private sharedDataService: SharedDataService,
       private authService: AuthService
@@ -108,11 +106,7 @@ interface SecMenuItem {
       });
     }
       logout(): void {
-        // Perform logout logic here, e.g., clearing tokens, redirecting, etc.
-        this.authService.logout();  
-        this.globalService.clearsessionStorage();
-        localStorage.removeItem('authToken');
         localStorage.removeItem('businessEntityName');
-        this.router.navigate(['/login']);
+        this.authService.logout();
     }
   }

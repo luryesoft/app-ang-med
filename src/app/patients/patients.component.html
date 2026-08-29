@@ -2,17 +2,19 @@
     <div class="ptn_search_hdr" style="position: relative;">
     <span class="ptn_search_hdr_txt">Patient</span>
       <div class="search-dropdown">
-        <input type="text" class="search-input" [(ngModel)]="searchQuery" (keydown)="onEnter($event)" placeholder="Last Name, ptn. ID, or last 4 of SSN">
+        <input type="text" class="search-input" [(ngModel)]="searchQuery" (keydown)="onEnter($event)" placeholder="Last name, patient ID, last 4 SSN, or ALL">
         <ul *ngIf="filteredOptions.length > 0" class="dropdown-list">
           <li *ngFor="let option of filteredOptions" (click)="onOptionClick(option)">
-            {{ option.ptn_last_nm }},  {{ option.ptn_first_nm }}
+            {{ option.ptn_last_nm }}, {{ option.ptn_first_nm }}
+            <span *ngIf="option.ptn_id" class="search-ptn-id">({{ option.ptn_id }})</span>
           </li>
         </ul>
       </div>
       <div class="ptn_search_hdr_icons">
 
 
-        <mat-icon class="add-icon" 
+        <mat-icon class="add-icon"
+        [class.icon-disabled]="!selectedOption?.ptn_id"
         style="font-variation-settings: 'wght' 200;color:rgb(35, 92, 214);"
         matTooltip="Generate PDF" (click)="generatePDFone()">picture_as_pdf</mat-icon>
 
@@ -21,15 +23,17 @@
         matTooltip="Add New Patient" (click)="toggleMode()">group_add</mat-icon>
 
         <mat-icon class="add-icon" fontSet="material-symbols-outlined" 
-        class="delete-icon" style="font-variation-settings: 'wght' 200;color:red;"
-        matTooltip="delete selected Parient"
-        (click)="openWarningDialog('Are you sure you want to delete this Patient?', selectedOption.ptn_id)">delete_outline</mat-icon>
+        class="delete-icon"
+        [class.icon-disabled]="!selectedOption?.ptn_id"
+        style="font-variation-settings: 'wght' 200;color:red;"
+        matTooltip="Delete selected patient"
+        (click)="confirmDeletePatient()">delete_outline</mat-icon>
  
       </div>
     </div>
     <div class="ptn_details">
   <mat-accordion>
-      <mat-expansion-panel hideToggle [disabled]="!selectedOption?.ptn_id" #panel1>
+      <mat-expansion-panel hideToggle [disabled]="isUpdateMode && !selectedOption?.ptn_id" #panel1>
         <mat-expansion-panel-header class="ptn_details_hdr">
           <mat-panel-title>Patient Information: {{ selectedOption?.ptn_first_nm }} {{ selectedOption?.ptn_last_nm }} 
           <span class="span-ptn_id" *ngIf="selectedOption?.ptn_id">(ID: {{ selectedOption.ptn_id }})</span></mat-panel-title>
@@ -42,14 +46,14 @@
             &nbsp;&#9;<span *ngIf="selectedOption?.ptn_ssn"  class="ptn_details_hdr">SSN#:</span><span>{{ selectedOption?.ptn_ssn |ssnMask}}</span> 
  
             <mat-icon class="chevron-icon">
-              {{ panel.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+              {{ panel1?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
             </mat-icon> 
           </mat-panel-description>
         </mat-expansion-panel-header>
 
         <mat-divider class="thick-divider"></mat-divider>
 
-        <form [formGroup]="patientForm" (ngSubmit)="onSubmit(patientForm.value)">
+        <form [formGroup]="patientForm" (ngSubmit)="onSubmit()">
             <div class="form-row">
             <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
                 <mat-label class="form-label">First Name</mat-label>
@@ -60,7 +64,7 @@
               </mat-form-field>
               <mat-form-field appearance="fill" class="form-field" style="width: 70pt;">
                 <mat-label class="form-label">Mid Init</mat-label>
-                <input matInput formControlName="ptn_mid_init">
+                <input matInput formControlName="ptn_mid_init" maxlength="3">
               </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
               <mat-label class="form-label" >Last Name</mat-label>
@@ -71,70 +75,52 @@
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
               <mat-label class="form-label" >Date of Birth</mat-label>
-              <input matInput formControlName="ptn_date_of_birth"  mask="00/00/0000" placeholder="MM/DD/YYYY" required>
-              <mat-error class="error-message" *ngIf="patientForm.get('ptn_date_of_birth')?.hasError('required')">
-                required
-              </mat-error>
+              <input matInput formControlName="ptn_date_of_birth"  mask="00/00/0000" placeholder="MM/DD/YYYY">
             </mat-form-field> 
               <mat-form-field appearance="fill" class="form-field" style="width: 90pt;">
               <mat-label class="form-label">Sex</mat-label>
-                <mat-select formControlName="ptn_sex" required>
+                <mat-select formControlName="ptn_sex">
                     <mat-option [value]="'M'">Male</mat-option>
                     <mat-option [value]="'F'">Female</mat-option>
                   </mat-select>
-                <mat-error class="error-message" *ngIf="patientForm.get('ptn_sex')?.hasError('required')">
-                  required
-                </mat-error>
               </mat-form-field>
               <mat-form-field appearance="fill" class="form-field" style="width: 100pt;">
                 <mat-label class="form-label">SSN#</mat-label>
-                <input matInput formControlName="ptn_ssn" mask="000-00-0000" placeholder="000-00-0000">
+                <input matInput formControlName="ptn_ssn" mask="000-00-0000" maxlength="11" placeholder="000-00-0000">
               </mat-form-field>
  
               <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
                 <mat-label class="form-label">Home Phone</mat-label>
-                <input matInput formControlName="ptn_home_phone" mask="(000) 000-0000" placeholder="(555) 555-5555">
+                <input matInput formControlName="ptn_home_phone" mask="(000) 000-0000" maxlength="15" placeholder="(555) 555-5555">
               </mat-form-field>
  
               <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
                 <mat-label class="form-label">Mobile Phone</mat-label>
-                <input matInput formControlName="ptn_mobile_phone"  mask="(000) 000-0000" placeholder="(555) 555-5555">
+                <input matInput formControlName="ptn_mobile_phone"  mask="(000) 000-0000" maxlength="15" placeholder="(555) 555-5555">
 
               </mat-form-field>
               <mat-form-field appearance="fill" class="form-field" style="width: 240pt;">
-                <mat-label class="form-label">Ocupation</mat-label>
-                <input matInput formControlName="ptn_occupation" maxlength="150">
+                <mat-label class="form-label">Occupation</mat-label>
+                <input matInput formControlName="ptn_occupation" maxlength="70">
               </mat-form-field>              
              </div>
              <div class="form-row">
 
                 <mat-form-field appearance="fill" class="form-field" style="width: 255pt;">
                     <mat-label class="form-label">Address</mat-label>
-                    <input matInput formControlName="ptn_address" required maxlength="50">
-                    <mat-error class="error-message" *ngIf="patientForm.get('ptn_address')?.hasError('required')">
-                      required
-                    </mat-error>
+                    <input matInput formControlName="ptn_address" maxlength="50">
                   </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 190pt;">
                     <mat-label class="form-label">City</mat-label>
-                    <input matInput formControlName="ptn_city" required maxlength="35">
-                    <mat-error class="error-message" *ngIf="patientForm.get('ptn_city')?.hasError('required')">
-                      required
-                    </mat-error>
+                    <input matInput formControlName="ptn_city" maxlength="35">
                   </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 60pt;">
                     <mat-label class="form-label">State</mat-label>
-                    <input matInput formControlName="ptn_state" required maxlength="2">
-                    <mat-error class="error-message" *ngIf="patientForm.get('ptn_state')?.hasError('required')">
-                      required
-                    </mat-error>
+                    <input matInput formControlName="ptn_state" maxlength="2">
                 </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 70pt;">
                     <mat-label class="form-label">Zip</mat-label>
-                    <input matInput formControlName="ptn_zip" required numericOnly maxlength="5" pattern="[0-9]*">
-                    <mat-error class="error-message" *ngIf="patientForm.get('ptn_zip')?.hasError('required')">
-                      required
-                    </mat-error>                    
+                    <input matInput formControlName="ptn_zip" numericOnly maxlength="9"> 
                 </mat-form-field>  
                 <mat-form-field appearance="fill" class="form-field" style="width: 100pt;">
                 <mat-label class="form-label">Status</mat-label>
@@ -145,32 +131,48 @@
                 </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 470pt;text-transform: none;">
                     <mat-label class="form-label">Comments</mat-label>
-                    <input matInput formControlName="ptn_comments" maxlength="300">                 
-                </mat-form-field>  
-                                            
-            
+                    <input matInput formControlName="ptn_comments" maxlength="200"> 
+                </mat-form-field>
+            </div>
+            <div class="form-row">
+                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
+                  <mat-label class="form-label">Lawyer</mat-label>
+                  <mat-select formControlName="lw_id" [compareWith]="compareIds">
+                    <mat-option [value]="null">None</mat-option>
+                    <mat-option *ngFor="let firm of lawFirms" [value]="firm.lw_id">
+                      {{ firm.lw_nm }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
+                  <mat-label class="form-label">Provider</mat-label>
+                  <input matInput formControlName="provider_id" placeholder="Provider ID (future)" readonly>
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
+                  <mat-label class="form-label">Insurance</mat-label>
+                  <input matInput
+                    [formControl]="insuranceSearchCtrl"
+                    [matAutocomplete]="autoInsurance"
+                    (blur)="onInsuranceBlur()"
+                    (focus)="$any($event.target).select()"
+                    placeholder="Type to search">
+                  <button *ngIf="insuranceSearchCtrl.value" mat-icon-button matSuffix type="button" (click)="clearInsurance()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                  <mat-autocomplete #autoInsurance="matAutocomplete"
+                    [displayWith]="displayInsurance"
+                    (optionSelected)="onInsuranceSelected($event)">
+                    <mat-option [value]="null">None</mat-option>
+                    <mat-option *ngFor="let company of filteredInsurances$ | async" [value]="company">
+                      {{ company.ic_name }}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
                 <button mat-raised-button color="primary" type="submit">
                   {{ isUpdateMode ? 'Update Patient' : 'Add Patient' }}
                 </button>
             </div>
           </form>
-      </mat-expansion-panel>
-
-      <!-- Second Panel -->
-      <mat-expansion-panel [disabled]="!selectedOption?.ptn_id" #panel2>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            Assets
-          </mat-panel-title>
-          <mat-panel-description class="panel-description">
-            Provider and insurance (and possibly a lawyer as well).
-          </mat-panel-description>
-        </mat-expansion-panel-header>
-        <mat-divider class="thick-divider"></mat-divider>
-
-        <p>Provider and doctor from the list .</p>
-        <p>Insurance from the list. + contact information</p>
-        <p>Do we need ICD codes on the paient level</p>
       </mat-expansion-panel>
 
       <mat-expansion-panel [disabled]="!selectedOption?.ptn_id" #panel3>

@@ -5,7 +5,7 @@
       Facilities
 
 
-      <mat-form-field class="search-input small-form-field" appearance="outline" >
+      <mat-form-field class="search-input small-form-field" appearance="outline" subscriptSizing="dynamic" style="font-size: 12px;">
         <mat-label>Filter by facility name</mat-label>
         <input matInput type="text" 
           placeholder="Filter by facility name"
@@ -58,15 +58,15 @@
       <form [formGroup]="facilityForm" (ngSubmit)="onSubmit()">
         <div class="row1">
           <div class="col-md-6">
-            <mat-form-field appearance="fill" class="long-column">
+            <mat-form-field appearance="fill" class="long-column compact-field" subscriptSizing="dynamic">
               <mat-label>Name</mat-label>
               <input matInput formControlName="facility_nm" required>
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field">
+            <mat-form-field appearance="fill" class="form-field compact-field" subscriptSizing="dynamic">
               <mat-label>Federal Tax ID Number</mat-label>
               <input matInput formControlName="facility_tin" maxlength="250">
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field">
+            <mat-form-field appearance="fill" class="form-field compact-field" subscriptSizing="dynamic">
               <mat-label>NPI Number</mat-label>
               <input matInput formControlName="facility_npi" maxlength="100">
             </mat-form-field>
@@ -75,22 +75,22 @@
 
         <div class="row3">
           <div class="col-md-6">
-            <mat-form-field appearance="fill" class="long-column">
+            <mat-form-field appearance="fill" class="long-column compact-field" subscriptSizing="dynamic">
               <mat-label>Address</mat-label>
               <input matInput formControlName="facility_address_tx" required>
             </mat-form-field>
 
-            <mat-form-field appearance="fill" class="form-field">
+            <mat-form-field appearance="fill" class="form-field compact-field" subscriptSizing="dynamic">
               <mat-label>City</mat-label>
               <input matInput formControlName="facility_city" required>
             </mat-form-field>
 
-            <mat-form-field appearance="fill" class="short-column" >
+            <mat-form-field appearance="fill" class="short-column compact-field" subscriptSizing="dynamic">
               <mat-label>State</mat-label>
               <input matInput formControlName="facility_state" maxlength="2" appUppercase required>
             </mat-form-field>
 
-            <mat-form-field appearance="fill" class="short-column">
+            <mat-form-field appearance="fill" class="short-column compact-field" subscriptSizing="dynamic">
               <mat-label>Zip Code</mat-label>
               <input matInput formControlName="facility_zip_cd" required>
             </mat-form-field>
@@ -99,7 +99,7 @@
 
         <div class="row2">
           <div class="col-md-6">
-            <mat-form-field appearance="fill" class="long-column">
+            <mat-form-field appearance="fill" class="long-column compact-field" subscriptSizing="dynamic">
               <mat-label>Email</mat-label>
               <input matInput formControlName="facility_email">
               <mat-error *ngIf="facilityForm.get('facility_email')?.hasError('required')">
@@ -109,12 +109,12 @@
                 Please enter a valid email address.
               </mat-error>               
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field">
+            <mat-form-field appearance="fill" class="form-field compact-field" subscriptSizing="dynamic">
               <mat-label>Phone</mat-label>
               <input matInput formControlName="facility_phone" required>
             </mat-form-field>
 
-            <mat-form-field appearance="fill" class="form-field1">
+            <mat-form-field appearance="fill" class="form-field1 compact-field" subscriptSizing="dynamic">
               <mat-label>Facility Type</mat-label>
               <mat-select formControlName="facility_type_id" class="custom-dropdown" required (selectionChange)="logFacilityTypeName()">
                 <mat-option *ngFor="let typeq of facilityTypes" [value]="typeq.facility_type_id">

@@ -15,5 +15,8 @@ export interface Patient {
     ptn_sex: string,
     ptn_ssn: string,
     ptn_state: string,
-    ptn_zip: string
+    ptn_zip: string,
+    lw_id?: number | null,
+    provider_id?: number | null,
+    ic_id?: number | null
   }

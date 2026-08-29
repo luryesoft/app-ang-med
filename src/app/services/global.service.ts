@@ -80,6 +80,7 @@ export class GlobalService {
 
   setIsLogged(isLoggedIn: boolean): void {
     this.isLoggedIn = isLoggedIn;
+    this.saveTosessionStorage();
   }
 
   setBusinessEntityName(name: string): void {

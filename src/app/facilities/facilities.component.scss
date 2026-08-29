@@ -25,17 +25,13 @@
     color: #5e5151;
 
   }
-  .search-input.small-form-field,
-  .compact-field {
+  .search-input.small-form-field {
+    width: 220px;
+    margin: 0 12px;
     font-size: 12px;
 
-    .mat-mdc-text-field-wrapper,
-    .mdc-text-field {
-      height: 40px !important;
-    }
-
     .mat-mdc-form-field-infix {
-      min-height: 40px !important;
+      min-height: 36px !important;
       padding-top: 8px !important;
       padding-bottom: 8px !important;
     }
@@ -45,9 +41,27 @@
     }
   }
 
-  .search-input.small-form-field {
-    width: 220px;
-    margin: 0 12px;
+  .compact-field {
+    font-size: 13px;
+
+    .mat-mdc-text-field-wrapper,
+    .mdc-text-field {
+      height: auto !important;
+    }
+
+    .mat-mdc-form-field-infix {
+      min-height: 48px !important;
+      padding-top: 20px !important;
+      padding-bottom: 6px !important;
+    }
+
+    .mdc-floating-label {
+      top: 18px;
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
   }
 
   .right-panel {

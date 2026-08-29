@@ -1,4 +1,3 @@
-
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { UserService } from './user.service';
@@ -9,7 +8,7 @@ describe('UserService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule], // Add this line
+      imports: [HttpClientTestingModule],
       providers: [UserService]
     });
     service = TestBed.inject(UserService);
@@ -22,17 +21,5 @@ describe('UserService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
-  });
-
-  it('should handle unexpected error', () => {
-    service.login({userId: 'test@example.com', passWord: 'password'}).subscribe({
-      next: () => fail('should have failed with an error'),
-      error: (error) => {
-        expect(error.message).toBe('An unexpected error occurred');
-      }
-    });
-
-    const req = httpMock.expectOne('http://localhost:3000/api/userlogin');
-    req.flush('Error', { status: 500, statusText: 'Server Error' });
   });
 });

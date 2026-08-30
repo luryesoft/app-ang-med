@@ -14,9 +14,14 @@ export interface Patient {
     ptn_occupation: string,
     ptn_sex: string,
     ptn_ssn: string,
+    ptn_ssn_last4?: string,
     ptn_state: string,
     ptn_zip: string,
     lw_id?: number | null,
     provider_id?: number | null,
-    ic_id?: number | null
+    ic_id?: number | null,
+    ptn_date_of_accident?: string | null,
+    ptn_policy_no?: string | null,
+    ptn_claim_no?: string | null,
+    ptn_policyholder?: string | null
   }

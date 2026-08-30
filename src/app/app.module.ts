@@ -46,6 +46,8 @@ import { IcdCodeDialogComponent } from './miscellaneous/icd-code-dialog/icd-code
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PatientsComponent } from './patients/patients.component';
+import { ServiceCptDialogComponent } from './patients/service-cpt-dialog/service-cpt-dialog.component';
+import { ServiceIcdDialogComponent } from './patients/service-icd-dialog/service-icd-dialog.component';
 import { ReportsComponent } from './reports/reports.component';
 import { SsnMaskPipe } from './pipes/ssn-mask.pipe';
 import { NumericOnlyDirective } from './pipes/numeric-only.directive';
@@ -71,6 +73,8 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     CptCodeDialogComponent,
     IcdCodeDialogComponent,
     PatientsComponent,
+    ServiceCptDialogComponent,
+    ServiceIcdDialogComponent,
     SsnMaskPipe,
     NumericOnlyDirective,
    // ReportsComponent,

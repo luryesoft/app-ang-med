@@ -1,0 +1,59 @@
+<div class="container">
+  <div class="filter-input-container">
+    <input class="filter-input" type="text"
+      placeholder="Filter by CPT code or Description"
+      [(ngModel)]="filterQuery"
+      (input)="applyFilter()">
+    <button mat-icon-button *ngIf="filterQuery" (click)="clearFilter()">
+      <mat-icon class="clear-icon">cancel</mat-icon>
+    </button>
+    <h1 mat-dialog-title>Company CPT Codes</h1>
+    <mat-button-toggle-group
+      [(value)]="toggleState"
+      (change)="toggleFilter($event.value)"
+      [hideSingleSelectionIndicator]="hideSingleSelectionIndicator()"
+      name="filterOptions"
+      aria-label="Filter Options">
+      <mat-button-toggle value="all">All</mat-button-toggle>
+      <mat-button-toggle value="selected">Selected</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="scrollable-content">
+    <div *ngIf="filteredCptCodes.length === 0" class="empty-hint">
+      No CPT codes assigned to this company.
+    </div>
+    <mat-list>
+      <mat-list-item
+        *ngFor="let cptCode of filteredCptCodes"
+        [ngClass]="{
+          'selected-row': selectedCptCodes.has(cptCode.cpt_code),
+          'assigned-row': isAssigned(cptCode.cpt_code)
+        }"
+        (click)="toggleSelection(cptCode.cpt_code)">
+        <div class="list-item-content">
+          <span>
+            {{ cptCode.cpt_code }}
+            <small>{{ cptCode.cpt_code_short_nm || cptCode.cpt_code_description }}</small>
+            <small class="already-assigned" *ngIf="isAssigned(cptCode.cpt_code)">Already on service</small>
+          </span>
+          <mat-checkbox class="checkbox-style"
+            [checked]="selectedCptCodes.has(cptCode.cpt_code)"
+            [disabled]="isAssigned(cptCode.cpt_code)"
+            (click)="$event.stopPropagation()"
+            (change)="toggleSelection(cptCode.cpt_code)">
+          </mat-checkbox>
+        </div>
+      </mat-list-item>
+    </mat-list>
+  </div>
+</div>
+
+<div mat-dialog-actions class="dialog-actions">
+  <button mat-button class="cancel-button" type="button" (click)="dialogRef.close()">Cancel</button>
+  <button mat-button class="confirm-button" type="button" (click)="save()">Save</button>
+</div>
+
+<div *ngIf="errorMessage" class="error-popup">
+  {{ errorMessage }}
+</div>

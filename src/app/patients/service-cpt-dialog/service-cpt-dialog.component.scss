@@ -1,0 +1,103 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.filter-input-container {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgb(231, 231, 236);
+  border-radius: 10px;
+  height: 35px;
+  width: 95%;
+  background-color: white;
+  margin: 16px;
+}
+
+.scrollable-content {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid rgb(231, 231, 236);
+  border-radius: 10px;
+  margin: 0 16px;
+}
+
+.filter-input {
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.dialog-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 8px 16px;
+  background-color: white;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.selected-row {
+  background-color: #e8eefc !important;
+}
+
+.assigned-row {
+  opacity: 0.65;
+}
+
+.list-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.checkbox-style {
+  margin-left: auto;
+}
+
+.clear-icon {
+  color: #2196F3;
+}
+
+.already-assigned {
+  margin-left: 8px;
+  color: #c62828;
+}
+
+.empty-hint {
+  color: #777;
+  padding: 10px;
+}
+
+.cancel-button,
+.confirm-button {
+  margin: 0 10px;
+  border-radius: 7px;
+  border: 0.5px solid #746464;
+  padding: 5px 10px;
+  width: 100px;
+}
+
+.confirm-button:hover,
+.cancel-button:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.error-popup {
+  position: fixed;
+  top: 8px;
+  right: 20px;
+  background-color: #ff5100fa;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  z-index: 1000;
+}

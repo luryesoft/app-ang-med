@@ -33,7 +33,18 @@ export class PatientSearchService {
     return this.http.post<{ returncd: number; returntx: string }>(`${this.apiUrl}/insert_ptn`, argmessage);
   }
 
-  getLookups(): Observable<{ lawyers: any[]; insurances: any[] }> {
-    return this.http.get<{ lawyers: any[]; insurances: any[] }>(`${this.apiUrl}/lookups`);
+  getLookups(): Observable<{ lawyers: any[]; insurances: any[]; cptCodes: any[]; icdCodes: any[] }> {
+    return this.http.get<{ lawyers: any[]; insurances: any[]; cptCodes: any[]; icdCodes: any[] }>(`${this.apiUrl}/lookups`);
+  }
+
+  generateNf3(payload: {
+    ptn_id: number;
+    service: any;
+    ptn_date_of_accident?: string;
+    ptn_policy_no?: string;
+    ptn_claim_no?: string;
+    ptn_policyholder?: string;
+  }): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/nf3`, payload, { responseType: 'blob' });
   }
 }

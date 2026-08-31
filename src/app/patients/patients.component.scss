@@ -217,6 +217,13 @@ mat-icon {
   font-weight: 600;
 }
 
+.dx-panel-body {
+  background-color: #fff;
+  margin: 0 8px 8px;
+  border: 1px solid #e7e7ec;
+  border-radius: 5px;
+}
+
 .billing-panels {
   display: flex;
   align-items: stretch;
@@ -297,7 +304,7 @@ mat-icon {
 }
 
 .cpt-edit-table .cell-num {
-  width: 80px;
+  width: 110px;
   text-align: right;
   text-transform: none;
 }
@@ -368,8 +375,17 @@ mat-icon {
   width: 130px;
 }
 
-.svc-field-provider {
+.svc-field-facility {
   width: 220px;
+}
+
+.svc-field-provider {
+  width: 240px;
+}
+
+.svc-field-locked {
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 .svc-field-status {
@@ -416,7 +432,7 @@ mat-icon {
 
 .code-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 6px 12px;
   border-bottom: 1px solid #f0f0f0;
@@ -430,6 +446,9 @@ mat-icon {
 .code-desc {
   flex: 1;
   color: #444;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.35;
 }
 
 .row-remove {
@@ -455,7 +474,10 @@ mat-icon {
   width: 70px;
 }
 
-.add-amt,
+.add-amt {
+  width: 140px;
+}
+
 .add-date {
   width: 120px;
 }

@@ -28,7 +28,7 @@
         <mat-list *ngIf="!isLoading">
             <mat-list-item *ngFor="let icdCode of filteredIcdCodes" >
                 <div class="list-item-content">
-              {{ icdCode.icd_code }} - <small>{{ (icdCode.icd_code_description | slice:0:165) + (icdCode.icd_code_description.length > 165? '...' : '')  }}</small>
+              {{ icdCode.icd_code }} - <small>{{ icdCode.icd_code_description }}</small>
               <mat-checkbox class="checkbox-style"
               [checked]="selectedIcdCodes.has(icdCode.icd_code)" 
               (change)="toggleSelection(icdCode.icd_code)">

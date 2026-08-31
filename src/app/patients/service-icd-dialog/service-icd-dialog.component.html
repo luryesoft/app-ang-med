@@ -34,8 +34,8 @@
         <div class="list-item-content">
           <span>
             {{ icdCode.icd_code }}
-            <small>{{ icdCode.icd_code_text || icdCode.icd_code_description }}</small>
-            <small class="already-assigned" *ngIf="isAssigned(icdCode.icd_code)">Already on service</small>
+            <small>{{ icdCode.icd_code_description || icdCode.icd_code_text }}</small>
+            <small class="already-assigned" *ngIf="isAssigned(icdCode.icd_code)">Already on patient</small>
           </span>
           <mat-checkbox class="checkbox-style"
             [checked]="selectedIcdCodes.has(icdCode.icd_code)"

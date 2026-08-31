@@ -35,7 +35,7 @@ export class ServiceIcdDialogComponent implements OnInit {
 
   toggleSelection(icdCode: string): void {
     if (this.isAssigned(icdCode)) {
-      this.errorMessage = `${icdCode} is already on this service`;
+      this.errorMessage = `${icdCode} is already assigned to this patient`;
       setTimeout(() => (this.errorMessage = ''), 2500);
       return;
     }
@@ -84,7 +84,7 @@ export class ServiceIcdDialogComponent implements OnInit {
       return;
     }
     if (unique.length === 0) {
-      this.errorMessage = 'Selected ICD codes are already on this service';
+      this.errorMessage = 'Selected ICD codes are already assigned to this patient';
       setTimeout(() => (this.errorMessage = ''), 3000);
       return;
     }

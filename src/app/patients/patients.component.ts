@@ -11,6 +11,7 @@ import { GlobalService } from '../services/global.service';
 import { MatExpansionPanel } from '@angular/material/expansion';
 import { PdfComponent } from '../pdfgen/pdfgen.component';
 import { Patient } from '../models/patient.model';
+import { parseMoney } from '../pipes/numeric-only.directive';
 import {
   DiagnosisCode,
   PatientService,
@@ -29,6 +30,7 @@ import { Observable, map, startWith } from 'rxjs';
 })
 export class PatientsComponent implements OnInit{
   @ViewChild('panel1') panel1!: MatExpansionPanel;
+  @ViewChild('panelDx') panelDx!: MatExpansionPanel;
   searchQuery: string = '';
   filteredOptions: any[] = [];
   entityId: number = 0;
@@ -43,12 +45,18 @@ export class PatientsComponent implements OnInit{
   isUpdateMode: boolean = false;
   lawFirms: any[] = [];
   insurances: any[] = [];
+  facilities: any[] = [];
+  facilityProviders: any[] = [];
+  officeProviders: any[] = [];
   companyCptCodes: any[] = [];
   companyIcdCodes: any[] = [];
   insuranceSearchCtrl = new FormControl<any>('');
   filteredInsurances$!: Observable<any[]>;
   services: PatientService[] = [];
+  diagnoses: DiagnosisCode[] = [];
   selectedService: PatientService | null = null;
+  private billingSaving = false;
+  private billingSaveQueued = false;
   serviceStatuses: ServiceStatus[] = ['Open', 'Billed', 'Partial', 'Paid', 'Denied'];
   newIcdCode = '';
   newIcdDesc = '';
@@ -118,6 +126,8 @@ export class PatientsComponent implements OnInit{
       next: (data) => {
         this.lawFirms = data.lawyers || [];
         this.insurances = data.insurances || [];
+        this.facilities = data.facilities || [];
+        this.facilityProviders = data.providers || [];
         this.companyCptCodes = data.cptCodes || [];
         this.companyIcdCodes = data.icdCodes || [];
         this.syncInsuranceDisplay();
@@ -639,7 +649,13 @@ export class PatientsComponent implements OnInit{
     }
     this.patientSearchService.generateNf3({
       ptn_id: this.selectedOption.ptn_id,
-      service: svc,
+      service: {
+        ...svc,
+        svc_id: Number(svc.svc_id) || 0,
+        facility_id: svc.facility_id != null ? Number(svc.facility_id) : null,
+        provider_id: svc.provider_id != null ? Number(svc.provider_id) : null,
+        diagnoses: this.diagnoses
+      },
       ptn_date_of_accident: this.patientForm.get('ptn_date_of_accident')?.value,
       ptn_policy_no: this.patientForm.get('ptn_policy_no')?.value,
       ptn_claim_no: this.patientForm.get('ptn_claim_no')?.value,
@@ -695,6 +711,13 @@ export class PatientsComponent implements OnInit{
       || '';
   }
 
+  get diagnosisSummary(): string {
+    if (!this.diagnoses.length) {
+      return 'No ICD codes assigned';
+    }
+    return this.diagnoses.map((dx) => dx.icd_code).join(', ');
+  }
+
   get patientBilledTotal(): number {
     return this.services.reduce((sum, svc) => sum + this.serviceBilled(svc), 0);
   }
@@ -704,11 +727,11 @@ export class PatientsComponent implements OnInit{
   }
 
   serviceBilled(svc: PatientService): number {
-    return svc.lines.reduce((sum, line) => sum + (Number(line.amount) || 0) * (Number(line.units) || 1), 0);
+    return svc.lines.reduce((sum, line) => sum + (parseMoney(line.amount) || 0) * (Number(line.units) || 1), 0);
   }
 
   servicePaid(svc: PatientService): number {
-    return svc.payments.reduce((sum, pay) => sum + (Number(pay.amount) || 0), 0);
+    return svc.payments.reduce((sum, pay) => sum + (parseMoney(pay.amount) || 0), 0);
   }
 
   serviceBalance(svc: PatientService): number {
@@ -720,23 +743,28 @@ export class PatientsComponent implements OnInit{
   }
 
   selectService(svc: PatientService): void {
+    if (this.selectedService && this.selectedService !== svc) {
+      this.persistServices();
+    }
     this.selectedService = svc;
+    this.loadOfficeProviders(svc?.facility_id);
   }
 
   addService(): void {
-    const nextId = this.services.reduce((max, svc) => Math.max(max, svc.svc_id), 0) + 1;
     const svc: PatientService = {
-      svc_id: nextId,
+      svc_id: 0,
       svc_date: this.todayInput(),
-      provider_nm: '',
+      facility_id: null,
+      provider_id: null,
       status: 'Open',
       notes: '',
-      diagnoses: [],
       lines: [],
       payments: []
     };
     this.services = [svc, ...this.services];
     this.selectedService = svc;
+    this.officeProviders = [];
+    this.persistServices();
   }
 
   confirmDeleteService(): void {
@@ -750,13 +778,16 @@ export class PatientsComponent implements OnInit{
       if (confirmed && this.selectedService) {
         this.services = this.services.filter((svc) => svc !== this.selectedService);
         this.selectedService = this.services[0] || null;
+        this.persistServices();
       }
     });
   }
 
-  openServiceIcdDialog(): void {
-    if (!this.selectedService) {
-      this.showError('Select a service first');
+  openPatientIcdDialog(event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+    if (!this.selectedOption?.ptn_id) {
+      this.showError('Select a patient first');
       return;
     }
     if (!this.companyIcdCodes.length) {
@@ -768,11 +799,11 @@ export class PatientsComponent implements OnInit{
       height: '85vh',
       data: {
         codes: this.companyIcdCodes,
-        assignedCodes: this.selectedService.diagnoses.map((dx) => dx.icd_code)
+        assignedCodes: this.diagnoses.map((dx) => dx.icd_code)
       }
     });
     dialogRef.afterClosed().subscribe((result) => {
-      if (!result?.codes?.length || !this.selectedService) {
+      if (!result?.codes?.length) {
         return;
       }
       const added = this.applySelectedIcdCodes(result.codes);
@@ -788,11 +819,8 @@ export class PatientsComponent implements OnInit{
   }
 
   private applySelectedIcdCodes(codes: any[]): number {
-    if (!this.selectedService) {
-      return 0;
-    }
     const existing = new Set(
-      this.selectedService.diagnoses.map((dx) => String(dx.icd_code).toUpperCase())
+      this.diagnoses.map((dx) => String(dx.icd_code).toUpperCase())
     );
     const added: DiagnosisCode[] = [];
     for (const code of codes) {
@@ -803,20 +831,19 @@ export class PatientsComponent implements OnInit{
       existing.add(icd);
       added.push({
         icd_code: icd,
-        description: String(code.icd_code_text || code.icd_code_description || '')
+        description: String(code.icd_code_description || code.icd_code_text || '')
       });
     }
     if (added.length) {
-      this.selectedService.diagnoses = [...this.selectedService.diagnoses, ...added];
+      this.diagnoses = [...this.diagnoses, ...added];
+      this.persistDiagnoses();
     }
     return added.length;
   }
 
   removeDiagnosis(index: number): void {
-    if (!this.selectedService) {
-      return;
-    }
-    this.selectedService.diagnoses = this.selectedService.diagnoses.filter((_, i) => i !== index);
+    this.diagnoses = this.diagnoses.filter((_, i) => i !== index);
+    this.persistDiagnoses();
   }
 
   openServiceCptDialog(): void {
@@ -829,11 +856,14 @@ export class PatientsComponent implements OnInit{
       return;
     }
     const dialogRef = this.dialog.open(ServiceCptDialogComponent, {
-      width: '55vw',
+      width: '64vw',
       height: '85vh',
       data: {
         codes: this.companyCptCodes,
-        assignedCodes: this.selectedService.lines.map((line) => line.cpt_code)
+        assignedLines: this.selectedService.lines.map((line) => ({
+          cpt_code: line.cpt_code,
+          modifier: line.modifier
+        }))
       }
     });
     dialogRef.afterClosed().subscribe((result) => {
@@ -856,24 +886,30 @@ export class PatientsComponent implements OnInit{
     if (!this.selectedService) {
       return 0;
     }
-    const existing = new Set(this.selectedService.lines.map((line) => String(line.cpt_code).toUpperCase()));
+    const existing = new Set(
+      this.selectedService.lines.map((line) => this.cptLineKey(line.cpt_code, line.modifier))
+    );
     const newLines: ServiceLine[] = [];
     for (const code of codes) {
-      const cpt = String(code.cpt_code ?? '').toUpperCase();
-      if (!cpt || existing.has(cpt)) {
+      const cpt = String(code.cpt_code ?? '').trim().toUpperCase();
+      const modifier = String(code.cpt_code_modifier || '').trim().toUpperCase();
+      const key = this.cptLineKey(cpt, modifier);
+      if (!cpt || existing.has(key)) {
         continue;
       }
-      existing.add(cpt);
+      existing.add(key);
+      const amount = Number(code.cpt_code_charge_am);
       newLines.push({
         cpt_code: cpt,
         description: String(code.cpt_code_description || code.cpt_code_short_nm || ''),
-        modifier: String(code.cpt_code_modifier || ''),
+        modifier,
         units: 1,
-        amount: Number(code.cpt_code_charge_am) || 0
+        amount: Number.isFinite(amount) ? amount : 0
       });
     }
     if (newLines.length) {
       this.selectedService.lines = [...this.selectedService.lines, ...newLines];
+      this.persistServices();
     }
     return newLines.length;
   }
@@ -883,21 +919,23 @@ export class PatientsComponent implements OnInit{
       this.showError('Select a service first');
       return;
     }
-    const seen = new Set<string>();
     const saved: ServiceLine[] = [];
+    const seen = new Set<string>();
     for (const line of this.selectedService.lines) {
       const code = String(line.cpt_code || '').trim().toUpperCase();
       if (!code) {
         this.showError('Every CPT line needs a code');
         return;
       }
-      if (seen.has(code)) {
-        this.showError(`Duplicate CPT ${code} is not allowed`);
+      const modifier = String(line.modifier || '').trim().toUpperCase();
+      const key = this.cptLineKey(code, modifier);
+      if (seen.has(key)) {
+        this.showError(`Duplicate CPT ${code}${modifier ? '-' + modifier : ''} is not allowed`);
         return;
       }
-      seen.add(code);
+      seen.add(key);
       const units = Number(line.units);
-      const amount = Number(line.amount);
+      const amount = parseMoney(line.amount);
       if (!Number.isFinite(units) || units < 1) {
         this.showError(`Units for ${code} must be at least 1`);
         return;
@@ -909,13 +947,13 @@ export class PatientsComponent implements OnInit{
       saved.push({
         cpt_code: code,
         description: String(line.description || '').trim(),
-        modifier: String(line.modifier || '').trim().toUpperCase(),
+        modifier,
         units,
         amount
       });
     }
     this.selectedService.lines = saved;
-    this.showSuccess('CPT lines saved');
+    this.persistServices('CPT lines saved');
   }
 
   addCptLine(): void {
@@ -932,14 +970,21 @@ export class PatientsComponent implements OnInit{
       this.showError('Enter a CPT amount');
       return;
     }
+    const modifier = this.newCptModifier.trim().toUpperCase();
+    const key = this.cptLineKey(code, modifier);
+    if (this.selectedService.lines.some((line) => this.cptLineKey(line.cpt_code, line.modifier) === key)) {
+      this.showError(`CPT ${code}${modifier ? '-' + modifier : ''} is already on this service`);
+      return;
+    }
     const line: ServiceLine = {
       cpt_code: code,
       description: this.newCptDesc.trim(),
-      modifier: this.newCptModifier.trim().toUpperCase(),
+      modifier,
       units: Number(this.newCptUnits) > 0 ? Number(this.newCptUnits) : 1,
       amount
     };
     this.selectedService.lines = [...this.selectedService.lines, line];
+    this.persistServices();
     this.newCptCode = '';
     this.newCptDesc = '';
     this.newCptModifier = '';
@@ -952,13 +997,14 @@ export class PatientsComponent implements OnInit{
       return;
     }
     this.selectedService.lines = this.selectedService.lines.filter((_, i) => i !== index);
+    this.persistServices();
   }
 
   addPayment(): void {
     if (!this.selectedService) {
       return;
     }
-    const amount = Number(this.newPayAmount);
+    const amount = parseMoney(this.newPayAmount);
     if (!this.newPayDate.trim()) {
       this.showError('Enter a payment date');
       return;
@@ -999,15 +1045,256 @@ export class PatientsComponent implements OnInit{
   }
 
   private loadServicesForPatient(): void {
-    this.services = this.buildSampleServices();
-    this.selectedService = this.services[0] || null;
+    this.services = [];
+    this.diagnoses = [];
+    this.selectedService = null;
+    this.officeProviders = [];
     this.resetDraftFields();
+    const ptnId = Number(this.selectedOption?.ptn_id);
+    if (!ptnId) {
+      return;
+    }
+    this.patientSearchService.getPatientBilling(ptnId).subscribe({
+      next: (data) => {
+        this.diagnoses = data?.diagnoses || [];
+        this.services = (data?.services || []).map((svc) => this.normalizeLoadedService(svc));
+        this.selectedService = this.services[0] || null;
+        this.loadOfficeProviders(this.selectedService?.facility_id);
+      },
+      error: (error) => {
+        console.error('Error loading patient billing:', error);
+        this.showError('Could not load services and diagnoses');
+      }
+    });
   }
 
   private clearBillingWorkspace(): void {
     this.services = [];
+    this.diagnoses = [];
     this.selectedService = null;
+    this.officeProviders = [];
     this.resetDraftFields();
+  }
+
+  persistServiceHeader(): void {
+    this.persistServices();
+  }
+
+  hasTreatingOffice(svc: PatientService | null = this.selectedService): boolean {
+    return Number(svc?.facility_id) > 0;
+  }
+
+  onServiceFacilityChange(): void {
+    if (!this.selectedService) {
+      return;
+    }
+    const facilityId = Number(this.selectedService.facility_id);
+    this.selectedService.facility_id = Number.isFinite(facilityId) && facilityId > 0 ? facilityId : null;
+    this.selectedService.provider_id = null;
+    this.loadOfficeProviders(this.selectedService.facility_id);
+    this.persistServiceHeader();
+  }
+
+  onServiceProviderChange(): void {
+    if (!this.hasTreatingOffice()) {
+      if (this.selectedService) {
+        this.selectedService.provider_id = null;
+      }
+      return;
+    }
+    this.persistServiceHeader();
+  }
+
+  private loadOfficeProviders(facilityId: number | null | undefined): void {
+    const id = Number(facilityId);
+    if (!Number.isFinite(id) || id <= 0) {
+      this.officeProviders = [];
+      return;
+    }
+    this.officeProviders = this.providersForFacility(id);
+    this.patientSearchService.getProvidersForFacility(id).subscribe({
+      next: (rows) => {
+        if (Number(this.selectedService?.facility_id) !== id) {
+          return;
+        }
+        this.officeProviders = rows || [];
+        this.dropProviderIfNotInOffice();
+      },
+      error: (error) => {
+        console.error('Error loading treating providers:', error);
+        this.officeProviders = this.providersForFacility(id);
+        this.dropProviderIfNotInOffice();
+      }
+    });
+  }
+
+  private dropProviderIfNotInOffice(): void {
+    if (!this.selectedService) {
+      return;
+    }
+    if (!this.hasTreatingOffice()) {
+      this.selectedService.provider_id = null;
+      return;
+    }
+    const providerId = Number(this.selectedService.provider_id);
+    const allowed = this.officeProviders.some((row) => Number(row.provider_id) === providerId);
+    if (!allowed) {
+      this.selectedService.provider_id = null;
+    }
+  }
+
+  providersForFacility(facilityId: number | null | undefined): any[] {
+    const id = Number(facilityId);
+    if (!Number.isFinite(id) || id <= 0) {
+      return [];
+    }
+    return this.facilityProviders.filter((row) => Number(row.facility_id) === id);
+  }
+
+  serviceLocationLabel(svc: PatientService): string {
+    const facility = svc.facility_nm || this.facilityName(svc.facility_id);
+    const provider = svc.provider_nm || this.providerName(svc.facility_id, svc.provider_id);
+    if (facility && provider) {
+      return `${facility} — ${provider}`;
+    }
+    return provider || facility || 'No provider';
+  }
+
+  private facilityName(facilityId: number | null | undefined): string {
+    const id = Number(facilityId);
+    if (!Number.isFinite(id) || id <= 0) {
+      return '';
+    }
+    const row = this.facilities.find((item) => Number(item.facility_id) === id);
+    return row?.facility_nm || '';
+  }
+
+  private providerName(
+    facilityId: number | null | undefined,
+    providerId: number | null | undefined
+  ): string {
+    const facId = Number(facilityId);
+    const provId = Number(providerId);
+    if (!Number.isFinite(facId) || facId <= 0 || !Number.isFinite(provId) || provId <= 0) {
+      return '';
+    }
+    const row = this.facilityProviders.find(
+      (item) => Number(item.facility_id) === facId && Number(item.provider_id) === provId
+    );
+    return row?.provider_nm || '';
+  }
+
+  private persistDiagnoses(): void {
+    const ptnId = Number(this.selectedOption?.ptn_id);
+    if (!ptnId) {
+      return;
+    }
+    this.patientSearchService.savePatientIcd(ptnId, this.diagnoses).subscribe({
+      next: (data) => {
+        this.diagnoses = data?.diagnoses || this.diagnoses;
+      },
+      error: (error) => {
+        console.error('Error saving diagnoses:', error);
+        this.showError('Could not save diagnoses');
+      }
+    });
+  }
+
+  private persistServices(successMessage?: string): void {
+    const ptnId = Number(this.selectedOption?.ptn_id);
+    if (!ptnId) {
+      return;
+    }
+    if (this.billingSaving) {
+      this.billingSaveQueued = true;
+      return;
+    }
+    this.billingSaving = true;
+    this.patientSearchService.savePatientServices(ptnId, this.services).subscribe({
+      next: (data) => {
+        const queued = this.billingSaveQueued;
+        this.billingSaveQueued = false;
+        this.billingSaving = false;
+        if (queued) {
+          this.adoptSavedServiceIds(data?.services || []);
+          this.persistServices(successMessage);
+          return;
+        }
+        this.applySavedServices(data?.services || []);
+        if (successMessage) {
+          this.showSuccess(successMessage);
+        }
+      },
+      error: (error) => {
+        this.billingSaving = false;
+        console.error('Error saving services:', error);
+        this.showError('Could not save services');
+      }
+    });
+  }
+
+  private adoptSavedServiceIds(saved: PatientService[]): void {
+    const normalized = saved.map((svc) => this.normalizeLoadedService(svc));
+    const localById = new Map(
+      this.services.filter((svc) => Number(svc.svc_id) > 0).map((svc) => [Number(svc.svc_id), svc])
+    );
+    const pending = this.services.filter((svc) => Number(svc.svc_id) <= 0);
+    const unusedSaved = normalized.filter((svc) => !localById.has(svc.svc_id));
+    for (const pendingSvc of pending) {
+      const created = unusedSaved.shift();
+      if (created) {
+        pendingSvc.svc_id = created.svc_id;
+      }
+    }
+  }
+
+  private applySavedServices(saved: PatientService[]): void {
+    const normalized = saved.map((svc) => this.normalizeLoadedService(svc));
+    const localById = new Map(
+      this.services.filter((svc) => Number(svc.svc_id) > 0).map((svc) => [Number(svc.svc_id), svc])
+    );
+    const pending = this.services.filter((svc) => Number(svc.svc_id) <= 0);
+    const unusedSaved = normalized.filter((svc) => !localById.has(svc.svc_id));
+    for (const pendingSvc of pending) {
+      const created = unusedSaved.shift();
+      if (created) {
+        pendingSvc.svc_id = created.svc_id;
+        localById.set(created.svc_id, pendingSvc);
+      }
+    }
+    const selected = this.selectedService;
+    this.services = normalized.map((svc) => localById.get(svc.svc_id) || svc);
+    if (selected) {
+      this.selectedService =
+        this.services.find((svc) => svc === selected || svc.svc_id === selected.svc_id) ||
+        this.services[0] ||
+        null;
+    }
+  }
+
+  private normalizeLoadedService(svc: PatientService): PatientService {
+    return {
+      svc_id: Number(svc.svc_id) || 0,
+      svc_date: this.formatDateForInput(svc.svc_date) || svc.svc_date || '',
+      facility_id: svc.facility_id != null ? Number(svc.facility_id) : null,
+      provider_id: svc.provider_id != null ? Number(svc.provider_id) : null,
+      facility_nm: svc.facility_nm || '',
+      provider_nm: svc.provider_nm || '',
+      status: svc.status || 'Open',
+      notes: svc.notes || '',
+      lines: (svc.lines || []).map((line) => ({
+        cpt_code: line.cpt_code || '',
+        description: line.description || '',
+        modifier: line.modifier || '',
+        units: Number(line.units) || 1,
+        amount: Number(line.amount) || 0
+      })),
+      payments: svc.payments || []
+    };
+  }
+
+  private cptLineKey(cptCode: string, modifier: string): string {
+    return `${String(cptCode || '').trim().toUpperCase()}|${String(modifier || '').trim().toUpperCase()}`;
   }
 
   private resetDraftFields(): void {
@@ -1029,43 +1316,5 @@ export class PatientsComponent implements OnInit{
     const month = ('0' + (now.getMonth() + 1)).slice(-2);
     const day = ('0' + now.getDate()).slice(-2);
     return `${month}/${day}/${now.getFullYear()}`;
-  }
-
-  private buildSampleServices(): PatientService[] {
-    return [
-      {
-        svc_id: 1,
-        svc_date: '08/12/2026',
-        provider_nm: 'Chen, PT',
-        status: 'Partial',
-        notes: 'Initial evaluation and therapy',
-        diagnoses: [
-          { icd_code: 'M54.5', description: 'Low back pain' },
-          { icd_code: 'S13.4XXA', description: 'Sprain of ligaments of cervical spine' }
-        ],
-        lines: [
-          { cpt_code: '97161', description: 'PT evaluation, low complexity', modifier: '', units: 1, amount: 150 },
-          { cpt_code: '97110', description: 'Therapeutic exercises', modifier: '', units: 2, amount: 80 }
-        ],
-        payments: [
-          { pay_date: '08/20/2026', method: 'EFT', reference: 'NF-88421', amount: 150 }
-        ]
-      },
-      {
-        svc_id: 2,
-        svc_date: '08/19/2026',
-        provider_nm: 'Chen, PT',
-        status: 'Open',
-        notes: '',
-        diagnoses: [
-          { icd_code: 'M54.5', description: 'Low back pain' }
-        ],
-        lines: [
-          { cpt_code: '97110', description: 'Therapeutic exercises', modifier: '', units: 2, amount: 80 },
-          { cpt_code: '97140', description: 'Manual therapy', modifier: '', units: 1, amount: 70 }
-        ],
-        payments: []
-      }
-    ];
   }
 }

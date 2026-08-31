@@ -9,6 +9,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { CptCodeDialogComponent } from '../cpt-code-dialog/cpt-code-dialog.component';
 import { CptCodeDto } from '../models/cpt-codes-dto';
 import { IcdCodeDialogComponent } from './icd-code-dialog/icd-code-dialog.component';
+import { parseMoney } from '../pipes/numeric-only.directive';
 
 @Component({
   selector: 'app-miscellaneous',
@@ -280,7 +281,7 @@ onSubmitUpdateCptCode(): void {
           cpt_code_short_nm: formData.cpt_code_short_nm,
           cpt_code_description: formData.cpt_code_description,
           cpt_code_modifier: formData.cpt_code_modifier,
-          cpt_code_charge_am: formData.cpt_code_charge_am,
+          cpt_code_charge_am: parseMoney(formData.cpt_code_charge_am),
           active_in: formData.active_in,
           when_updated: null,
           updated_by: this.userId
@@ -330,7 +331,7 @@ onSubmitInsertCptCode(): void {
           cpt_code_short_nm: formData.cpt_code_short_nm,
           cpt_code_description: formData.cpt_code_description,
           cpt_code_modifier: formData.cpt_code_modifier,
-          cpt_code_charge_am: formData.cpt_code_charge_am,
+          cpt_code_charge_am: parseMoney(formData.cpt_code_charge_am),
           active_in: formData.active_in,
           when_updated: null, // Set this to the appropriate value if needed
           updated_by: this.userId // Replace with dynamic user data if available
@@ -369,10 +370,8 @@ onSubmitInsertCptCode(): void {
   }
 
   currencyValidator(control: AbstractControl): { [key: string]: boolean } | null {
-    const value = control.value;
-    const currencyRegex = /^\d+(\.\d{1,2})?$/; // Matches numbers with up to two decimal places
-    return currencyRegex.test(value) ? null : { invalidCurrency: true };
-    console.log(currencyRegex.test(value));
+    const amount = parseMoney(control.value);
+    return Number.isFinite(amount) && amount >= 0 ? null : { invalidCurrency: true };
   }
 
   clearForm(): void {

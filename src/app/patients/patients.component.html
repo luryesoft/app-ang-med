@@ -210,6 +210,39 @@
           </form>
       </mat-expansion-panel>
 
+      <mat-expansion-panel hideToggle [disabled]="!selectedOption?.ptn_id" #panelDx>
+        <mat-expansion-panel-header class="ptn_details_hdr">
+          <mat-panel-title>
+            Diagnosis (ICD)
+            <span class="span-ptn_id" *ngIf="diagnoses.length">({{ diagnoses.length }})</span>
+          </mat-panel-title>
+          <mat-panel-description>
+            <span>{{ diagnosisSummary }}</span>
+            <mat-icon
+              class="add-icon"
+              matTooltip="Select company ICD codes"
+              (mousedown)="$event.stopPropagation()"
+              (click)="openPatientIcdDialog($event)">list_alt_add</mat-icon>
+            <mat-icon class="chevron-icon">
+              {{ panelDx?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+            </mat-icon>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <mat-divider class="thick-divider"></mat-divider>
+
+        <div class="dx-panel-body">
+          <div *ngIf="diagnoses.length === 0" class="empty-hint">
+            Assign ICD codes once for this patient. They apply to every service.
+          </div>
+          <div class="code-row" *ngFor="let dx of diagnoses; let i = index">
+            <span class="code-value">{{ dx.icd_code }}</span>
+            <span class="code-desc">{{ dx.description }}</span>
+            <mat-icon class="row-remove" matTooltip="Remove diagnosis" (click)="removeDiagnosis(i)">close</mat-icon>
+          </div>
+        </div>
+      </mat-expansion-panel>
+
   </mat-accordion>
 
     <div class="billing-workspace" *ngIf="selectedOption?.ptn_id">
@@ -261,7 +294,7 @@
                 <span class="status-chip" [ngClass]="statusClass(svc.status)">{{ svc.status }}</span>
               </span>
             </div>
-            <div class="svc-item-mid">{{ svc.provider_nm || 'No provider' }}</div>
+            <div class="svc-item-mid">{{ serviceLocationLabel(svc) }}</div>
             <div class="svc-item-bottom">
               <span>{{ serviceBilled(svc) | currency:'USD':'symbol':'1.2-2' }}</span>
               <span class="svc-balance">Bal {{ serviceBalance(svc) | currency:'USD':'symbol':'1.2-2' }}</span>
@@ -287,21 +320,49 @@
           <div class="svc-header-form">
             <mat-form-field appearance="fill" class="form-field svc-field-date">
               <mat-label class="form-label">Date of service</mat-label>
-              <input matInput [(ngModel)]="selectedService.svc_date" mask="00/00/0000" placeholder="MM/DD/YYYY">
+              <input matInput [(ngModel)]="selectedService.svc_date" mask="00/00/0000" placeholder="MM/DD/YYYY" (blur)="persistServiceHeader()">
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field svc-field-provider">
-              <mat-label class="form-label">Service provider</mat-label>
-              <input matInput [(ngModel)]="selectedService.provider_nm" maxlength="70">
+            <mat-form-field appearance="fill" class="form-field svc-field-facility">
+              <mat-label class="form-label">Treating office</mat-label>
+              <mat-select
+                [(ngModel)]="selectedService.facility_id"
+                [compareWith]="compareIds"
+                (selectionChange)="onServiceFacilityChange()">
+                <mat-option [value]="null">Select treating office</mat-option>
+                <mat-option *ngFor="let facility of facilities" [value]="facility.facility_id">
+                  {{ facility.facility_nm }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field
+              appearance="fill"
+              class="form-field svc-field-provider"
+              [class.svc-field-locked]="!hasTreatingOffice()">
+              <mat-label class="form-label">Treating provider</mat-label>
+              <mat-select
+                [(ngModel)]="selectedService.provider_id"
+                [compareWith]="compareIds"
+                [disabled]="!hasTreatingOffice()"
+                (selectionChange)="onServiceProviderChange()">
+                <mat-option [value]="null">
+                  {{ hasTreatingOffice() ? 'Select treating provider' : 'Select treating office first' }}
+                </mat-option>
+                <mat-option
+                  *ngFor="let provider of officeProviders"
+                  [value]="provider.provider_id">
+                  {{ provider.provider_nm }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field svc-field-status">
               <mat-label class="form-label">Status</mat-label>
-              <mat-select [(ngModel)]="selectedService.status">
+              <mat-select [(ngModel)]="selectedService.status" (selectionChange)="persistServiceHeader()">
                 <mat-option *ngFor="let status of serviceStatuses" [value]="status">{{ status }}</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field svc-field-notes">
               <mat-label class="form-label">Service notes</mat-label>
-              <input matInput [(ngModel)]="selectedService.notes" maxlength="200">
+              <input matInput [(ngModel)]="selectedService.notes" maxlength="200" (blur)="persistServiceHeader()">
             </mat-form-field>
           </div>
 
@@ -324,24 +385,6 @@
 
           <div class="detail-card">
             <div class="section-hdr">
-              <span>Diagnosis (ICD)</span>
-              <mat-icon
-                class="add-icon"
-                matTooltip="Select company ICD codes"
-                (click)="openServiceIcdDialog()">list_alt_add</mat-icon>
-            </div>
-            <div *ngIf="selectedService.diagnoses.length === 0" class="empty-hint">
-              Use the list icon to assign company ICD codes.
-            </div>
-            <div class="code-row" *ngFor="let dx of selectedService.diagnoses; let i = index">
-              <span class="code-value">{{ dx.icd_code }}</span>
-              <span class="code-desc">{{ dx.description }}</span>
-              <mat-icon class="row-remove" matTooltip="Remove diagnosis" (click)="removeDiagnosis(i)">close</mat-icon>
-            </div>
-          </div>
-
-          <div class="detail-card">
-            <div class="section-hdr">
               <span>Service details (CPT)</span>
               <div class="section-hdr-actions">
                 <button mat-stroked-button type="button" (click)="saveCptLines()">Save</button>
@@ -352,7 +395,7 @@
               </div>
             </div>
             <div *ngIf="selectedService.lines.length === 0" class="empty-hint">
-              Use the list icon to add company CPT codes, then edit and Save.
+              Use the list icon to add company CPT codes. Modifier and charge come with the selected code and can be edited before Save.
             </div>
             <table class="billing-table cpt-edit-table" *ngIf="selectedService.lines.length > 0">
               <thead>
@@ -380,7 +423,13 @@
                     <input class="cell-input cell-num" type="number" min="1" [(ngModel)]="line.units">
                   </td>
                   <td class="num">
-                    <input class="cell-input cell-num" type="number" min="0" step="0.01" [(ngModel)]="line.amount">
+                    <input class="cell-input cell-num" type="text"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      prefix="$ "
+                      [dropSpecialCharacters]="true"
+                      [allowNegativeNumbers]="false"
+                      [(ngModel)]="line.amount">
                   </td>
                   <td>
                     <mat-icon class="row-remove" matTooltip="Remove CPT line" (click)="removeCptLine(i)">close</mat-icon>
@@ -439,7 +488,15 @@
               </mat-form-field>
               <mat-form-field appearance="fill" class="form-field add-amt">
                 <mat-label class="form-label">Amount</mat-label>
-                <input matInput type="number" step="0.01" [(ngModel)]="newPayAmount" (keydown.enter)="addPayment()">
+                <input matInput
+                  mask="separator.2"
+                  thousandSeparator=","
+                  prefix="$ "
+                  [dropSpecialCharacters]="true"
+                  [allowNegativeNumbers]="false"
+                  [(ngModel)]="newPayAmount"
+                  placeholder="$ 0.00"
+                  (keydown.enter)="addPayment()">
               </mat-form-field>
               <button mat-stroked-button type="button" (click)="addPayment()">Add payment</button>
             </div>

@@ -85,9 +85,26 @@
   
   .list-item-content {
     display: flex;
-    justify-content: space-between; /* Distributes space between text and checkbox */
-    align-items: center; /* Vertically centers the content */
-    width: 100%; /* Ensures the flex container takes full width */
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    white-space: normal;
+    line-height: 1.35;
+    padding-right: 8px;
+  }
+
+  :host ::ng-deep .mat-mdc-list-item,
+  :host ::ng-deep .mat-list-item {
+    height: auto !important;
+    align-items: flex-start;
+  }
+
+  :host ::ng-deep .mat-mdc-list-item .mdc-list-item__content,
+  :host ::ng-deep .mat-list-item .mat-list-item-content {
+    height: auto !important;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    white-space: normal;
   }
   
   .checkbox-style {

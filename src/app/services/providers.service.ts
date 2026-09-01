@@ -1,14 +1,15 @@
 import { Injectable, Provider } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, tap, throwError } from 'rxjs';
-import { AddProvider } from '../providers/providers.component'; 
+import { AddProvider } from '../providers/providers.component';
+import { environment } from '../../environments/environment'; 
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProviderService {
 
-  private apiUrl = 'http://localhost:3000/api'; // Adjust the base URL as needed
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -22,8 +23,9 @@ export class ProviderService {
     );
   }
   searchProviders(searchString: string): Observable<any> {
-    const entity_id =  Number(sessionStorage.getItem('companyId')); 
-    return this.http.get<any>(`${this.apiUrl}/healthcare-providers/search-providers?entity_id=${entity_id}&search_string=${searchString}`).pipe(
+    const entity_id = Number(sessionStorage.getItem('companyId'));
+    const query = encodeURIComponent(searchString ?? '');
+    return this.http.get<any>(`${this.apiUrl}/healthcare-providers/search-providers?entity_id=${entity_id}&search_string=${query}`).pipe(
       catchError(error => {
         console.error('Error searching providers:', error);
         return throwError(() => new Error('Failed to search providers.'));

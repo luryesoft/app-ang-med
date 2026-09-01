@@ -58,7 +58,7 @@
                     <!-- CPT Code Charge Amount Column -->
                     <ng-container matColumnDef="cpt_code_charge_am">
                       <th mat-header-cell *matHeaderCellDef> Charge Amount </th>
-                      <td mat-cell *matCellDef="let element"> {{element.cpt_code_charge_am}} </td>
+                      <td mat-cell *matCellDef="let element"> {{element.cpt_code_charge_am | currency:'USD':'symbol':'1.2-2' }} </td>
                     </ng-container>
                   
                     <!-- Active In Column -->
@@ -101,11 +101,18 @@
                                 <input matInput maxlength="3" formControlName="cpt_code_modifier" >
                             </mat-form-field>
 
-                            <mat-form-field appearance="fill" class="short_form-field" style="width: 120px; margin-right: 10px;">
+                            <mat-form-field appearance="fill" class="short_form-field" style="width: 150px; margin-right: 10px;">
                             <mat-label class="small_label">Charge Amount:</mat-label>
-                            <input matInput  maxlength="9"  formControlName="cpt_code_charge_am" >
+                            <input matInput
+                              formControlName="cpt_code_charge_am"
+                              mask="separator.2"
+                              thousandSeparator=","
+                              prefix="$ "
+                              [dropSpecialCharacters]="true"
+                              [allowNegativeNumbers]="false"
+                              placeholder="$ 0.00">
                             <mat-error *ngIf="updateForm.get('cpt_code_charge_am')?.invalid && updateForm.get('cpt_code_charge_am')?.touched">
-                                Numbers only.
+                                Enter a valid amount.
                             </mat-error>
                             </mat-form-field>
 

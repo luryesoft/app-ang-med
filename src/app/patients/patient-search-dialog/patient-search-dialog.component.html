@@ -1,0 +1,116 @@
+<div class="dlg-wrap">
+  <div class="dlg-hdr">
+    <h1 mat-dialog-title>Find patients</h1>
+    <p class="dlg-hint">Combine any options. Results stay limited to this company.</p>
+  </div>
+
+  <div class="filter-grid">
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>Last name</mat-label>
+      <input matInput [(ngModel)]="lastNm" (keydown.enter)="search()" maxlength="30">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>First name</mat-label>
+      <input matInput [(ngModel)]="firstNm" (keydown.enter)="search()" maxlength="30">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld fld-narrow">
+      <mat-label>Patient ID</mat-label>
+      <input matInput type="number" [(ngModel)]="ptnId" (keydown.enter)="search()">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld fld-narrow">
+      <mat-label>SSN last 4</mat-label>
+      <input matInput [(ngModel)]="ssnLast4" mask="0000" maxlength="4" (keydown.enter)="search()">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>Treating office</mat-label>
+      <mat-select [(ngModel)]="facilityId" [compareWith]="compareIds" (selectionChange)="onOfficeChange()">
+        <mat-option [value]="null">Any office</mat-option>
+        <mat-option *ngFor="let office of data.facilities" [value]="office.facility_id">
+          {{ office.facility_nm }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>Insurance</mat-label>
+      <mat-select [(ngModel)]="icId" [compareWith]="compareIds">
+        <mat-option [value]="null">Any insurer</mat-option>
+        <mat-option *ngFor="let company of data.insurances" [value]="company.ic_id">
+          {{ company.ic_name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>Treating provider</mat-label>
+      <mat-select [(ngModel)]="providerId" [compareWith]="compareIds">
+        <mat-option [value]="null">Any provider</mat-option>
+        <mat-option *ngFor="let provider of officeProviders" [value]="provider.provider_id">
+          {{ provider.provider_nm }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld fld-narrow">
+      <mat-label>Status</mat-label>
+      <mat-select [(ngModel)]="activeFlag">
+        <mat-option value="Y">Active</mat-option>
+        <mat-option value="N">Inactive</mat-option>
+        <mat-option value="">All</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>Claim #</mat-label>
+      <input matInput [(ngModel)]="claimNo" (keydown.enter)="search()" maxlength="40">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="fld">
+      <mat-label>Policy #</mat-label>
+      <input matInput [(ngModel)]="policyNo" (keydown.enter)="search()" maxlength="40">
+    </mat-form-field>
+  </div>
+
+  <div class="filter-actions">
+    <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    <button mat-flat-button color="primary" type="button" (click)="search()" [disabled]="searching">
+      {{ searching ? 'Searching…' : 'Search' }}
+    </button>
+  </div>
+
+  <div class="results-panel">
+    <div class="results-hdr">
+      <span *ngIf="!searched">Set options and search to see matching patients.</span>
+      <span *ngIf="searched">{{ results.length }} patient{{ results.length === 1 ? '' : 's' }} found. Click a row to open.</span>
+    </div>
+    <div class="results-table-wrap" *ngIf="results.length">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>ID</th>
+            <th>DOB</th>
+            <th>Insurance</th>
+            <th>Office</th>
+            <th>Claim #</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of results" (click)="selectPatient(row)">
+            <td>{{ row.ptn_last_nm }}, {{ row.ptn_first_nm }}</td>
+            <td>{{ row.ptn_id }}</td>
+            <td>{{ formatDob(row.ptn_date_of_birth) }}</td>
+            <td>{{ row.ic_name || '—' }}</td>
+            <td>{{ row.office_nms || '—' }}</td>
+            <td>{{ row.ptn_claim_no || '—' }}</td>
+            <td>{{ row.ptn_active_flag === 'N' ? 'Inactive' : 'Active' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div mat-dialog-actions class="dlg-actions">
+    <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
+  </div>
+</div>
+
+<div *ngIf="errorMessage" class="error-popup">{{ errorMessage }}</div>

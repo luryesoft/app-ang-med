@@ -1,5 +1,13 @@
 import { Directive, HostListener } from '@angular/core';
 
+export function parseMoney(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : NaN;
+  }
+  const n = Number(String(value ?? '').replace(/[$,\s]/g, ''));
+  return Number.isFinite(n) ? n : NaN;
+}
+
 @Directive({
   selector: '[numericOnly]'
 })

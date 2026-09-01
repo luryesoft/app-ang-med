@@ -48,6 +48,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PatientsComponent } from './patients/patients.component';
 import { ServiceCptDialogComponent } from './patients/service-cpt-dialog/service-cpt-dialog.component';
 import { ServiceIcdDialogComponent } from './patients/service-icd-dialog/service-icd-dialog.component';
+import { PatientSearchDialogComponent } from './patients/patient-search-dialog/patient-search-dialog.component';
 import { ReportsComponent } from './reports/reports.component';
 import { SsnMaskPipe } from './pipes/ssn-mask.pipe';
 import { NumericOnlyDirective } from './pipes/numeric-only.directive';
@@ -75,6 +76,7 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     PatientsComponent,
     ServiceCptDialogComponent,
     ServiceIcdDialogComponent,
+    PatientSearchDialogComponent,
     SsnMaskPipe,
     NumericOnlyDirective,
    // ReportsComponent,

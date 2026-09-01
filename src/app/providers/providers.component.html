@@ -42,7 +42,7 @@
             <div class="provider-info row">
               <div class="provider-main">
                 <span class="provider-name">{{ provider.provider_nm }}</span>
-                <span class="provider-facility" *ngIf="provider.facility_nm">{{ provider.facility_nm }}</span>
+                <span class="provider-facility">{{ provider.facility_nm || 'No facility' }}</span>
               </div>
               <span class="provider-specialty">{{ provider.provider_credentials || 'No Specialty' }}</span>
               <span class="provider-status">

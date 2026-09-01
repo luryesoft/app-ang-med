@@ -1,7 +1,7 @@
 <div class="container">
   <div class="filter-input-container">
     <input class="filter-input" type="text"
-      placeholder="Filter by CPT code or Description"
+      placeholder="Filter by CPT code, description, or modifier"
       [(ngModel)]="filterQuery"
       (input)="applyFilter()">
     <button mat-icon-button *ngIf="filterQuery" (click)="clearFilter()">
@@ -23,25 +23,33 @@
     <div *ngIf="filteredCptCodes.length === 0" class="empty-hint">
       No CPT codes assigned to this company.
     </div>
+    <div class="cpt-list-header" *ngIf="filteredCptCodes.length > 0">
+      <span class="col-code">CPT</span>
+      <span class="col-desc">Description</span>
+      <span class="col-mod">Mod</span>
+      <span class="col-charge">Charge</span>
+      <span class="col-check"></span>
+    </div>
     <mat-list>
       <mat-list-item
         *ngFor="let cptCode of filteredCptCodes"
         [ngClass]="{
-          'selected-row': selectedCptCodes.has(cptCode.cpt_code),
-          'assigned-row': isAssigned(cptCode.cpt_code)
+          'selected-row': isSelected(cptCode),
+          'assigned-row': isAssigned(cptCode)
         }"
-        (click)="toggleSelection(cptCode.cpt_code)">
+        (click)="toggleSelection(cptCode)">
         <div class="list-item-content">
-          <span>
-            {{ cptCode.cpt_code }}
-            <small>{{ cptCode.cpt_code_short_nm || cptCode.cpt_code_description }}</small>
-            <small class="already-assigned" *ngIf="isAssigned(cptCode.cpt_code)">Already on service</small>
+          <span class="col-code">{{ cptCode.cpt_code }}</span>
+          <span class="col-desc">
+            {{ cptCode.cpt_code_short_nm || cptCode.cpt_code_description }}
+            <small class="already-assigned" *ngIf="isAssigned(cptCode)">Already on service</small>
           </span>
-          <mat-checkbox class="checkbox-style"
-            [checked]="selectedCptCodes.has(cptCode.cpt_code)"
-            [disabled]="isAssigned(cptCode.cpt_code)"
-            (click)="$event.stopPropagation()"
-            (change)="toggleSelection(cptCode.cpt_code)">
+          <span class="col-mod">{{ modifierLabel(cptCode) }}</span>
+          <span class="col-charge">{{ (cptCode.cpt_code_charge_am ?? 0) | currency:'USD':'symbol':'1.2-2' }}</span>
+          <mat-checkbox class="checkbox-style col-check"
+            [checked]="isSelected(cptCode)"
+            [disabled]="isAssigned(cptCode)"
+            (click)="toggleSelection(cptCode, $event)">
           </mat-checkbox>
         </div>
       </mat-list-item>

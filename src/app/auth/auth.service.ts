@@ -5,6 +5,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { LoginDTO } from '../models/login-dto';
 import { GlobalService } from '../services/global.service';
+import { environment } from '../../environments/environment';
 
 const TOKEN_KEY = 'authToken';
 const USER_KEY = 'user';
@@ -15,7 +16,7 @@ const CLOCK_SKEW_MS = 30_000;
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:3000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
@@ -50,11 +51,13 @@ export class AuthService {
   }
 
   setToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(TOKEN_KEY, token);
+    localStorage.removeItem(TOKEN_KEY);
   }
 
   getToken(): string | null {
-    const token = localStorage.getItem(TOKEN_KEY);
+    this.migrateLegacyToken();
+    const token = sessionStorage.getItem(TOKEN_KEY);
     if (!this.isUsableToken(token)) {
       if (token) {
         this.clearToken();
@@ -72,6 +75,16 @@ export class AuthService {
     return url.includes(LOGIN_PATH) || url.includes('/userlogin');
   }
 
+  /** Call on app start so a closed-browser reopen cannot reuse a leftover localStorage token. */
+  enforceBrowserSession(): void {
+    this.migrateLegacyToken();
+    if (!sessionStorage.getItem(TOKEN_KEY)) {
+      this.clearToken();
+      sessionStorage.removeItem(USER_KEY);
+      this.globalService.logout();
+    }
+  }
+
   logout(): void {
     this.clearToken();
     sessionStorage.removeItem(USER_KEY);
@@ -80,7 +93,17 @@ export class AuthService {
   }
 
   private clearToken(): void {
+    sessionStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
+  }
+
+  private migrateLegacyToken(): void {
+    const sessionToken = sessionStorage.getItem(TOKEN_KEY);
+    const legacyToken = localStorage.getItem(TOKEN_KEY);
+    if (!sessionToken && legacyToken) {
+      // Old sessions lived in localStorage; do not keep them across browser restarts.
+      localStorage.removeItem(TOKEN_KEY);
+    }
   }
 
   private readToken(response: any): string | null {

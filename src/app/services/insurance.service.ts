@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InsuranceService {
 
-  private apiUrl = 'http://localhost:3000/api/insurance'; // Adjust the base URL as needed
+    private readonly apiUrl = `${environment.apiUrl}/insurance`;
 
   constructor(private http: HttpClient) { }
 

@@ -5,6 +5,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { LoginDTO } from '../models/login-dto';
 import { GlobalService } from '../services/global.service';
+import { environment } from '../../environments/environment';
 
 const TOKEN_KEY = 'authToken';
 const USER_KEY = 'user';
@@ -15,7 +16,7 @@ const CLOCK_SKEW_MS = 30_000;
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:3000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,

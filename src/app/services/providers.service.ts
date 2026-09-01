@@ -1,14 +1,15 @@
 import { Injectable, Provider } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, tap, throwError } from 'rxjs';
-import { AddProvider } from '../providers/providers.component'; 
+import { AddProvider } from '../providers/providers.component';
+import { environment } from '../../environments/environment'; 
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProviderService {
 
-  private apiUrl = 'http://localhost:3000/api'; // Adjust the base URL as needed
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 

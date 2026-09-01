@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 
    @Injectable({
      providedIn: 'root'
    })
    export class SharedDataService {
-    private apiUrl = 'http://localhost:3000/api'; 
+    private readonly apiUrl = environment.apiUrl; 
      private businessEntityNameSource = new BehaviorSubject<string | null>(null);
      businessEntityName$ = this.businessEntityNameSource.asObservable();
 

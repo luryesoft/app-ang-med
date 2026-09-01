@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { GlobalService } from './global.service';
 import { catchError, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 
 @Injectable({
@@ -10,7 +11,7 @@ import { catchError, throwError } from 'rxjs';
 })
 export class MiscellaneousService {
 
-    private apiUrl = 'http://localhost:3000/api/miscellaneous';
+    private readonly apiUrl = `${environment.apiUrl}/miscellaneous`;
 
     constructor(private http: HttpClient, private globalService: GlobalService) { }
 

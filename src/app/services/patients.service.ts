@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DiagnosisCode, PatientService } from '../models/patient-service.model';
 import { parseMoney } from '../pipes/numeric-only.directive';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PatientSearchService {
-  private apiUrl = 'http://localhost:3000/api/patients'; // Replace with your actual backend URL
+  private readonly apiUrl = `${environment.apiUrl}/patients`;
 
   constructor(private http: HttpClient) {}
 

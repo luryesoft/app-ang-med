@@ -46,10 +46,31 @@ mat-icon {
     border: 1px solid #e0e0e0;
     border-radius: 10px;
     padding: 5px;
-    width: 200px;
+    width: 260px;
     font-size: 10px;
   }
 
+
+.search-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-more-icon {
+  margin: 0 !important;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  color: #235cd6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.search-more-icon:hover {
+  color: #0d3fad;
+}
 
 .search-dropdown {
     position: relative;
@@ -66,14 +87,29 @@ mat-icon {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 200px;
+    max-height: 280px;
     overflow-y: auto;
-    width: 250px;
+    width: 420px;
   }
  
 .dropdown-list li {
   padding: 8px;
   cursor: pointer;
+}
+
+.search-result-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.search-result-meta {
+  margin-top: 2px;
+  color: #666;
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dropdown-list li:hover {
@@ -166,10 +202,25 @@ mat-icon {
   cursor: default;
 }
 
-.ssn-replace-btn {
-  margin-left: 4px;
-  margin-right: 10px;
-  height: 36px;
+.ssn-field-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ssn-update-icon {
+  margin: 0 8px 0 0 !important;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  color: #235cd6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ssn-update-icon:hover {
+  color: #0d3fad;
 }
 
 .billing-workspace {

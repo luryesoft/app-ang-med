@@ -22,8 +22,9 @@ export class ProviderService {
     );
   }
   searchProviders(searchString: string): Observable<any> {
-    const entity_id =  Number(sessionStorage.getItem('companyId')); 
-    return this.http.get<any>(`${this.apiUrl}/healthcare-providers/search-providers?entity_id=${entity_id}&search_string=${searchString}`).pipe(
+    const entity_id = Number(sessionStorage.getItem('companyId'));
+    const query = encodeURIComponent(searchString ?? '');
+    return this.http.get<any>(`${this.apiUrl}/healthcare-providers/search-providers?entity_id=${entity_id}&search_string=${query}`).pipe(
       catchError(error => {
         console.error('Error searching providers:', error);
         return throwError(() => new Error('Failed to search providers.'));

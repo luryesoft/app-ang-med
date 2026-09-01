@@ -1,10 +1,11 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { PatientSearchService } from '../services/patients.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { FormBuilder } from '@angular/forms';
 import { WarningModalComponent } from '../warning-modal/warning-modal.component';
 import { ServiceCptDialogComponent } from './service-cpt-dialog/service-cpt-dialog.component';
 import { ServiceIcdDialogComponent } from './service-icd-dialog/service-icd-dialog.component';
+import { PatientSearchDialogComponent } from './patient-search-dialog/patient-search-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { GlobalService } from '../services/global.service';
@@ -70,6 +71,7 @@ export class PatientsComponent implements OnInit{
   newPayRef = '';
   newPayAmount: number | null = null;
   ssnReplaceMode = false;
+  ssnLoading = false;
   savedSsnLast4 = '';
 
   constructor(
@@ -77,6 +79,7 @@ export class PatientsComponent implements OnInit{
     private fb: FormBuilder,
     private dialog: MatDialog,
     private globalService: GlobalService,
+    private cdr: ChangeDetectorRef,
     //private pdfService: PdfService
     ) {
     this.patientForm = this.fb.group({
@@ -229,6 +232,7 @@ export class PatientsComponent implements OnInit{
     });
     this.savedSsnLast4 = this.toSsnLast4(patientData.ptn_ssn_last4 || patientData.ptn_ssn);
     this.ssnReplaceMode = false;
+    this.ssnLoading = false;
     this.syncInsuranceDisplay();
     this.patientForm.markAsPristine();
   }
@@ -241,6 +245,49 @@ export class PatientsComponent implements OnInit{
   /** @deprecated use clearSearchResults */
   clearSelection(): void {
     this.clearSearchResults();
+  }
+
+  openAdvancedSearch(): void {
+    const seed = this.searchQuery.trim();
+    const dialogRef = this.dialog.open(PatientSearchDialogComponent, {
+      width: '78vw',
+      height: '82vh',
+      autoFocus: true,
+      data: {
+        facilities: this.facilities,
+        insurances: this.insurances,
+        providers: this.facilityProviders,
+        lastName: seed && !/^\d+$/.test(seed) && seed.toUpperCase() !== 'ALL' ? seed : ''
+      }
+    });
+    dialogRef.afterClosed().subscribe((patient) => {
+      if (patient?.ptn_id) {
+        this.confirmDiscardChanges(() => this.applySelectedPatient(patient));
+      }
+    });
+  }
+
+  searchResultMeta(option: any): string {
+    if (!option) {
+      return '';
+    }
+    const dob = this.formatDateForInput(option.ptn_date_of_birth);
+    const cityState = [option.ptn_city, option.ptn_state].filter(Boolean).join(', ');
+    const insurer = this.insuranceNameFor(option.ic_id);
+    const last4 = this.toSsnLast4(option.ptn_ssn_last4 || option.ptn_ssn);
+    const claim = String(option.ptn_claim_no ?? '').trim();
+    return [
+      dob ? `DOB ${dob}` : '',
+      cityState,
+      insurer,
+      last4 ? `SSN ***-**-${last4}` : '',
+      claim ? `Claim ${claim}` : ''
+    ].filter(Boolean).join('  ·  ');
+  }
+
+  insuranceNameFor(icId: unknown): string {
+    const company = this.insurances.find((row) => Number(row.ic_id) === Number(icId));
+    return company?.ic_name || '';
   }
 
   onOptionClick(option: any): void {
@@ -301,6 +348,7 @@ export class PatientsComponent implements OnInit{
       this.insuranceSearchCtrl.setValue('');
       this.savedSsnLast4 = '';
       this.ssnReplaceMode = false;
+      this.ssnLoading = false;
       this.selectedOption = null;
       this.clearBillingWorkspace();
       this.patientForm.markAsPristine();
@@ -470,9 +518,24 @@ export class PatientsComponent implements OnInit{
   }
 
   enableSsnReplace(): void {
-    this.ssnReplaceMode = true;
-    this.patientForm.patchValue({ ptn_ssn: '' });
-    this.patientForm.get('ptn_ssn')?.markAsDirty();
+    const ptnId = Number(this.selectedOption?.ptn_id);
+    if (!ptnId || this.ssnLoading) {
+      return;
+    }
+    this.ssnLoading = true;
+    this.patientSearchService.getPatientSsn(ptnId).subscribe({
+      next: (data) => {
+        this.ssnLoading = false;
+        this.ssnReplaceMode = true;
+        this.cdr.detectChanges();
+        this.patientForm.patchValue({ ptn_ssn: data?.ptn_ssn || '' });
+      },
+      error: (error) => {
+        this.ssnLoading = false;
+        console.error('Error loading SSN:', error);
+        this.showError('Could not load SSN');
+      }
+    });
   }
 
   private toSsnLast4(value: unknown): string {
@@ -631,11 +694,48 @@ export class PatientsComponent implements OnInit{
   }
 
   generatePDFone(): void {
-    if (!this.selectedOption?.ptn_id) {
+    const ptnId = Number(this.selectedOption?.ptn_id);
+    if (!ptnId) {
       this.showError('Select a patient before generating a PDF');
       return;
     }
-    PdfComponent.patientInfo(this.selectedOption as Patient);
+    if (this.services.length || this.diagnoses.length) {
+      this.buildPatientChartPdf();
+      return;
+    }
+    this.patientSearchService.getPatientBilling(ptnId).subscribe({
+      next: (data) => {
+        this.diagnoses = data?.diagnoses || [];
+        this.services = (data?.services || []).map((svc) => this.normalizeLoadedService(svc));
+        this.selectedService = this.services[0] || null;
+        this.buildPatientChartPdf();
+      },
+      error: (error) => {
+        console.error('Error loading billing for PDF:', error);
+        this.buildPatientChartPdf();
+      }
+    });
+  }
+
+  private buildPatientChartPdf(): void {
+    const form = this.patientForm.getRawValue();
+    const patient = {
+      ...this.selectedOption,
+      ...form,
+      ptn_ssn: this.ssnLast4 || this.selectedOption?.ptn_ssn_last4 || this.selectedOption?.ptn_ssn || ''
+    } as Patient;
+    PdfComponent.patientInfo({
+      patient,
+      companyName: this.companyName,
+      insuranceName: this.selectedInsuranceName === 'None' ? '' : this.selectedInsuranceName,
+      lawyerName: this.selectedLawyerName === 'None' ? '' : this.selectedLawyerName,
+      diagnoses: this.diagnoses,
+      services: this.services.map((svc) => ({
+        ...svc,
+        facility_nm: svc.facility_nm || this.facilityName(svc.facility_id),
+        provider_nm: svc.provider_nm || this.providerName(svc.facility_id, svc.provider_id)
+      }))
+    });
   }
 
   printNf3(svc: PatientService, event?: Event): void {
@@ -654,7 +754,12 @@ export class PatientsComponent implements OnInit{
         svc_id: Number(svc.svc_id) || 0,
         facility_id: svc.facility_id != null ? Number(svc.facility_id) : null,
         provider_id: svc.provider_id != null ? Number(svc.provider_id) : null,
-        diagnoses: this.diagnoses
+        diagnoses: this.diagnoses,
+        lines: (svc.lines || []).map((line) => ({
+          ...line,
+          units: Number(line.units) || 1,
+          amount: parseMoney(line.amount) || 0
+        }))
       },
       ptn_date_of_accident: this.patientForm.get('ptn_date_of_accident')?.value,
       ptn_policy_no: this.patientForm.get('ptn_policy_no')?.value,

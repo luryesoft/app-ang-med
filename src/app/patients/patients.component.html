@@ -2,11 +2,21 @@
     <div class="ptn_search_hdr" style="position: relative;">
     <span class="ptn_search_hdr_txt">Patient</span>
       <div class="search-dropdown">
-        <input type="text" class="search-input" [(ngModel)]="searchQuery" (keydown)="onEnter($event)" placeholder="Last name, patient ID, last 4 SSN, or ALL">
+        <div class="search-input-row">
+          <input type="text" class="search-input" [(ngModel)]="searchQuery" (keydown)="onEnter($event)" placeholder="Last name, patient ID, last 4 SSN, or ALL">
+          <mat-icon
+            class="search-more-icon"
+            fontSet="material-symbols-outlined"
+            matTooltip="More search options"
+            (click)="openAdvancedSearch()">person_search</mat-icon>
+        </div>
         <ul *ngIf="filteredOptions.length > 0" class="dropdown-list">
           <li *ngFor="let option of filteredOptions" (click)="onOptionClick(option)">
-            {{ option.ptn_last_nm }}, {{ option.ptn_first_nm }}
-            <span *ngIf="option.ptn_id" class="search-ptn-id">({{ option.ptn_id }})</span>
+            <div class="search-result-name">
+              {{ option.ptn_last_nm }}, {{ option.ptn_first_nm }}
+              <span *ngIf="option.ptn_id" class="search-ptn-id">({{ option.ptn_id }})</span>
+            </div>
+            <div class="search-result-meta" *ngIf="searchResultMeta(option) as meta">{{ meta }}</div>
           </li>
         </ul>
       </div>
@@ -84,24 +94,28 @@
                     <mat-option [value]="'F'">Female</mat-option>
                   </mat-select>
               </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
-                <mat-label class="form-label">SSN#</mat-label>
-                <input *ngIf="!isUpdateMode || ssnReplaceMode"
-                  matInput
-                  formControlName="ptn_ssn"
-                  mask="000-00-0000"
-                  maxlength="11"
-                  placeholder="000-00-0000">
-                <input *ngIf="isUpdateMode && !ssnReplaceMode"
-                  matInput
-                  [value]="ssnLast4 | ssnMask"
-                  readonly>
-              </mat-form-field>
-              <button *ngIf="isUpdateMode && !ssnReplaceMode"
-                mat-stroked-button
-                type="button"
-                class="ssn-replace-btn"
-                (click)="enableSsnReplace()">Replace</button>
+              <div class="ssn-field-wrap">
+                <mat-form-field *ngIf="isUpdateMode && !ssnReplaceMode" appearance="fill" class="form-field" style="width: 120pt;">
+                  <mat-label class="form-label">SSN#</mat-label>
+                  <input matInput [value]="ssnLast4 | ssnMask" readonly>
+                </mat-form-field>
+                <mat-form-field *ngIf="!isUpdateMode || ssnReplaceMode" appearance="fill" class="form-field" style="width: 120pt;">
+                  <mat-label class="form-label">SSN#</mat-label>
+                  <input matInput
+                    formControlName="ptn_ssn"
+                    mask="000-00-0000"
+                    [dropSpecialCharacters]="true"
+                    maxlength="11"
+                    placeholder="000-00-0000">
+                </mat-form-field>
+                <mat-icon
+                  *ngIf="isUpdateMode && !ssnReplaceMode"
+                  class="ssn-update-icon"
+                  [class.icon-disabled]="ssnLoading"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Update SSN"
+                  (click)="enableSsnReplace()">edit_square</mat-icon>
+              </div>
  
               <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
                 <mat-label class="form-label">Home Phone</mat-label>

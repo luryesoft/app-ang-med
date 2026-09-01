@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { GlobalService } from './services/global.service';
+import { AuthService } from './auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -25,9 +26,13 @@ export class AppComponent implements OnInit {
   islogged: boolean = false;
   userId:string ='';
 
-  constructor(private globalService: GlobalService) {}
+  constructor(
+    private globalService: GlobalService,
+    private authService: AuthService
+  ) {}
   
   ngOnInit(): void {
+    this.authService.enforceBrowserSession();
     // Access or modify global variables
     this.userName = this.globalService.getUserName();
     this.globalService.userName = this.userName;

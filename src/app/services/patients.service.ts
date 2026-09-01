@@ -21,6 +21,25 @@ export class PatientSearchService {
     return this.http.get<any[]>(`${this.apiUrl}/search_ptn`, { params });
   }
 
+  searchPatientsAdvanced(filters: {
+    last_nm?: string;
+    first_nm?: string;
+    ptn_id?: number | null;
+    ssn_last4?: string;
+    facility_id?: number | null;
+    ic_id?: number | null;
+    provider_id?: number | null;
+    active_flag?: string;
+    claim_no?: string;
+    policy_no?: string;
+  }): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}/search_advanced`, filters);
+  }
+
+  getPatientSsn(ptnId: number): Observable<{ ptn_ssn: string }> {
+    return this.http.get<{ ptn_ssn: string }>(`${this.apiUrl}/ssn/${ptnId}`);
+  }
+
   updatePatient(patientData: any): Observable<{ returncd: number; returntx: string }> {
     const url = `${this.apiUrl}/update_ptn`;
     return this.http.put<{ returncd: number; returntx: string }>(url, patientData);

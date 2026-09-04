@@ -154,7 +154,7 @@
    // width: 10%;
     cursor: pointer;
     //font-size: 20px;
-    color: #cc1212;
+    color: red;
     visibility: hidden;
     //border: 1px solid #ccc;
     //padding: 1px; // Add padding to increase inner space
@@ -262,9 +262,9 @@
   align-items: center;
 }
 
-.ddelete-facility-icon {
+.delete-facility-icon {
   cursor: pointer;
-  color: black; /* Initial color for the delete icon */
+  color: red;
   transition: color 0.3s;
 }
 

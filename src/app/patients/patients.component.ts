@@ -46,13 +46,18 @@ export class PatientsComponent implements OnInit{
   isUpdateMode: boolean = false;
   lawFirms: any[] = [];
   insurances: any[] = [];
+  states: { state_cd: string; state_nm: string }[] = [];
+  cities: { city_nm: string; state_cd: string }[] = [];
+  private cityLoadSeq = 0;
   facilities: any[] = [];
   facilityProviders: any[] = [];
   officeProviders: any[] = [];
   companyCptCodes: any[] = [];
   companyIcdCodes: any[] = [];
   insuranceSearchCtrl = new FormControl<any>('');
+  citySearchCtrl = new FormControl<any>('');
   filteredInsurances$!: Observable<any[]>;
+  filteredCities$!: Observable<{ city_nm: string; state_cd: string }[]>;
   services: PatientService[] = [];
   diagnoses: DiagnosisCode[] = [];
   selectedService: PatientService | null = null;
@@ -109,6 +114,7 @@ export class PatientsComponent implements OnInit{
       ptn_claim_no: ['', [Validators.maxLength(40)]],
       ptn_policyholder: ['', [Validators.maxLength(70)]]
     });
+    this.citySearchCtrl.disable({ emitEvent: false });
   }
 
   ngOnInit(): void {
@@ -117,6 +123,10 @@ export class PatientsComponent implements OnInit{
     this.filteredInsurances$ = this.insuranceSearchCtrl.valueChanges.pipe(
       startWith(''),
       map((value) => this.filterInsurances(value))
+    );
+    this.filteredCities$ = this.citySearchCtrl.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterCities(value))
     );
     this.loadLookups();
     if (this.selectedOption) {
@@ -129,6 +139,7 @@ export class PatientsComponent implements OnInit{
       next: (data) => {
         this.lawFirms = data.lawyers || [];
         this.insurances = data.insurances || [];
+        this.states = data.states || [];
         this.facilities = data.facilities || [];
         this.facilityProviders = data.providers || [];
         this.companyCptCodes = data.cptCodes || [];
@@ -207,7 +218,7 @@ export class PatientsComponent implements OnInit{
       entity_id: patientData.entity_id,
       ptn_active_flag: patientData.ptn_active_flag,
       ptn_address: patientData.ptn_address,
-      ptn_city: patientData.ptn_city,
+      ptn_city: '',
       ptn_comments: patientData.ptn_comments,
       ptn_date_of_birth: this.formatDateForInput(patientData.ptn_date_of_birth),
       ptn_first_nm: patientData.ptn_first_nm,
@@ -219,7 +230,7 @@ export class PatientsComponent implements OnInit{
       ptn_occupation: patientData.ptn_occupation,
       ptn_sex: patientData.ptn_sex,
       ptn_ssn: '',
-      ptn_state: patientData.ptn_state,
+      ptn_state: String(patientData.ptn_state || '').trim().toUpperCase(),
       ptn_zip: patientData.ptn_zip,
       who_updated: patientData.who_updated,
       lw_id: patientData.lw_id != null ? Number(patientData.lw_id) : null,
@@ -234,6 +245,7 @@ export class PatientsComponent implements OnInit{
     this.ssnReplaceMode = false;
     this.ssnLoading = false;
     this.syncInsuranceDisplay();
+    this.loadCities(this.patientForm.get('ptn_state')?.value, patientData.ptn_city);
     this.patientForm.markAsPristine();
   }
 
@@ -346,6 +358,9 @@ export class PatientsComponent implements OnInit{
         ptn_policyholder: ''
       });
       this.insuranceSearchCtrl.setValue('');
+      this.cities = [];
+      this.citySearchCtrl.setValue('');
+      this.citySearchCtrl.disable({ emitEvent: false });
       this.savedSsnLast4 = '';
       this.ssnReplaceMode = false;
       this.ssnLoading = false;
@@ -446,6 +461,164 @@ export class PatientsComponent implements OnInit{
     this.insuranceSearchCtrl.setValue(company || (id != null && id !== '' ? String(id) : ''), { emitEvent: false });
   }
 
+  onStateChange(): void {
+    this.patientForm.patchValue({ ptn_city: '' });
+    this.citySearchCtrl.setValue('');
+    this.patientForm.get('ptn_city')?.markAsDirty();
+    this.loadCities(this.patientForm.get('ptn_state')?.value);
+  }
+
+  private loadCities(stateCode: string, selectedCity?: string): void {
+    const seq = ++this.cityLoadSeq;
+    const code = String(stateCode || '').trim().toUpperCase();
+    if (!code) {
+      this.cities = [];
+      this.citySearchCtrl.setValue('');
+      this.citySearchCtrl.disable({ emitEvent: false });
+      return;
+    }
+    this.citySearchCtrl.enable({ emitEvent: false });
+    this.patientSearchService.getCities(code).subscribe({
+      next: (rows) => {
+        if (seq !== this.cityLoadSeq) {
+          return;
+        }
+        this.cities = (rows || []).filter(
+          (row) => this.normalizeStateCode(row.state_cd) === code
+        );
+        this.applySelectedCity(selectedCity, code);
+      },
+      error: (error) => {
+        if (seq !== this.cityLoadSeq) {
+          return;
+        }
+        console.error('Error loading cities:', error);
+        this.cities = [];
+        this.applySelectedCity(selectedCity, code);
+      }
+    });
+  }
+
+  private applySelectedCity(selectedCity: string | undefined, stateCode: string): void {
+    if (selectedCity) {
+      const city = this.canonicalCity(selectedCity);
+      this.ensureCityOption(city, stateCode);
+      this.patientForm.patchValue({ ptn_city: city }, { emitEvent: false });
+    }
+    this.syncCityDisplay();
+  }
+
+  private normalizeStateCode(value: unknown): string {
+    return String(value || '').trim().toUpperCase();
+  }
+
+  private canonicalCity(name: string): string {
+    const needle = String(name || '').trim().toUpperCase();
+    if (!needle) {
+      return '';
+    }
+    const match = this.citiesForSelectedState().find(
+      (row) => String(row.city_nm || '').trim().toUpperCase() === needle
+    );
+    return match?.city_nm || String(name || '').trim();
+  }
+
+  private ensureCityOption(cityName: string, stateCode?: string): void {
+    const name = String(cityName || '').trim();
+    if (!name) {
+      return;
+    }
+    const exists = this.citiesForSelectedState().some(
+      (row) => String(row.city_nm || '').trim().toUpperCase() === name.toUpperCase()
+    );
+    if (!exists) {
+      const code = this.normalizeStateCode(stateCode || this.patientForm.get('ptn_state')?.value);
+      this.cities = [{ city_nm: name, state_cd: code }, ...this.cities];
+    }
+  }
+
+  private citiesForSelectedState(): { city_nm: string; state_cd: string }[] {
+    const state = this.normalizeStateCode(this.patientForm.get('ptn_state')?.value);
+    if (!state) {
+      return [];
+    }
+    return this.cities.filter((row) => this.normalizeStateCode(row.state_cd) === state);
+  }
+
+  displayCity = (city: any): string => {
+    if (!city) {
+      return '';
+    }
+    if (typeof city === 'string') {
+      return city;
+    }
+    return city.city_nm || '';
+  };
+
+  filterCities(value: any): { city_nm: string; state_cd: string }[] {
+    const inState = this.citiesForSelectedState();
+    const query = (typeof value === 'string' ? value : this.displayCity(value))
+      .toUpperCase()
+      .trim();
+    if (!query) {
+      return inState;
+    }
+    return inState.filter((row) => String(row.city_nm || '').toUpperCase().includes(query));
+  }
+
+  onCitySelected(event: MatAutocompleteSelectedEvent): void {
+    const city = event.option.value;
+    const name = typeof city === 'string' ? city : String(city?.city_nm || '').trim();
+    this.patientForm.patchValue({ ptn_city: name });
+    this.patientForm.get('ptn_city')?.markAsDirty();
+  }
+
+  onCityBlur(): void {
+    setTimeout(() => this.applyCityBlur(), 180);
+  }
+
+  private applyCityBlur(): void {
+    const value: any = this.citySearchCtrl.value;
+    if (!value || (typeof value === 'string' && !value.trim())) {
+      this.clearCity();
+      return;
+    }
+    if (typeof value === 'object' && value.city_nm) {
+      this.patientForm.patchValue({ ptn_city: String(value.city_nm).trim() });
+      return;
+    }
+    const matches = this.filterCities(value);
+    if (matches.length === 1) {
+      this.citySearchCtrl.setValue(matches[0]);
+      this.patientForm.patchValue({ ptn_city: matches[0].city_nm });
+      this.patientForm.get('ptn_city')?.markAsDirty();
+      return;
+    }
+    const exact = this.citiesForSelectedState().find(
+      (row) => String(row.city_nm || '').trim().toUpperCase() === String(value).trim().toUpperCase()
+    );
+    if (exact) {
+      this.citySearchCtrl.setValue(exact);
+      this.patientForm.patchValue({ ptn_city: exact.city_nm });
+      return;
+    }
+    this.syncCityDisplay();
+  }
+
+  clearCity(): void {
+    this.citySearchCtrl.setValue('');
+    this.patientForm.patchValue({ ptn_city: '' });
+    this.patientForm.get('ptn_city')?.markAsDirty();
+  }
+
+  syncCityDisplay(): void {
+    const name = String(this.patientForm.get('ptn_city')?.value || '').trim();
+    const city = this.citiesForSelectedState().find(
+      (row) => String(row.city_nm || '').trim().toUpperCase() === name.toUpperCase()
+    );
+    this.citySearchCtrl.setValue(city || name, { emitEvent: true });
+  }
+
   compareIds(a: any, b: any): boolean {
     if (a == null && b == null) {
       return true;
@@ -472,6 +645,17 @@ export class PatientsComponent implements OnInit{
   validatePatientData(patientData: any): boolean {
     patientData.ptn_date_of_birth = this.parseDateString(patientData.ptn_date_of_birth || '');
     patientData.ptn_date_of_accident = this.parseDateString(patientData.ptn_date_of_accident || '');
+
+    if (patientData.ptn_state) {
+      patientData.ptn_state = String(patientData.ptn_state).trim().toUpperCase();
+    } else {
+      patientData.ptn_state = '';
+    }
+    if (patientData.ptn_city) {
+      patientData.ptn_city = String(patientData.ptn_city).trim();
+    } else {
+      patientData.ptn_city = '';
+    }
 
     if (patientData.ptn_home_phone) {
       patientData.ptn_home_phone = patientData.ptn_home_phone.replace(/\D/g, '');
@@ -559,6 +743,9 @@ export class PatientsComponent implements OnInit{
             ptn_policyholder: ''
           });
           this.insuranceSearchCtrl.setValue('');
+          this.cities = [];
+          this.citySearchCtrl.setValue('');
+          this.citySearchCtrl.disable({ emitEvent: false });
           this.savedSsnLast4 = '';
           this.ssnReplaceMode = false;
           this.clearSearchResults();

@@ -62,6 +62,7 @@ export class PatientSearchService {
     icdCodes: any[];
     facilities: any[];
     providers: any[];
+    states: any[];
   }> {
     return this.http.get<{
       lawyers: any[];
@@ -70,7 +71,13 @@ export class PatientSearchService {
       icdCodes: any[];
       facilities: any[];
       providers: any[];
+      states: any[];
     }>(`${this.apiUrl}/lookups`);
+  }
+
+  getCities(stateCode: string): Observable<{ city_nm: string; state_cd: string }[]> {
+    const params = new HttpParams().set('stateCode', String(stateCode || '').trim().toUpperCase());
+    return this.http.get<{ city_nm: string; state_cd: string }[]>(`${this.apiUrl}/cities`, { params });
   }
 
   getProvidersForFacility(facilityId: number): Observable<any[]> {

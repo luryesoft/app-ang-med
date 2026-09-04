@@ -138,14 +138,37 @@
                     <mat-label class="form-label">Address</mat-label>
                     <input matInput formControlName="ptn_address" maxlength="50">
                   </mat-form-field>
+                <mat-form-field appearance="fill" class="form-field" style="width: 88pt;">
+                    <mat-label class="form-label">State</mat-label>
+                    <mat-select formControlName="ptn_state" panelClass="state-select-panel" (selectionChange)="onStateChange()">
+                      <mat-select-trigger>
+                        {{ patientForm.get('ptn_state')?.value }}
+                      </mat-select-trigger>
+                      <mat-option *ngFor="let st of states" [value]="st.state_cd">
+                        {{ st.state_cd }} — {{ st.state_nm }}
+                      </mat-option>
+                    </mat-select>
+                </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 190pt;">
                     <mat-label class="form-label">City</mat-label>
-                    <input matInput formControlName="ptn_city" maxlength="35">
+                    <input matInput
+                      [formControl]="citySearchCtrl"
+                      [matAutocomplete]="autoCity"
+                      (blur)="onCityBlur()"
+                      (focus)="$any($event.target).select()"
+                      maxlength="35"
+                      [placeholder]="patientForm.get('ptn_state')?.value ? 'Type to search' : 'Select a state first'">
+                    <button *ngIf="citySearchCtrl.value" mat-icon-button matSuffix type="button" (click)="clearCity()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                    <mat-autocomplete #autoCity="matAutocomplete"
+                      [displayWith]="displayCity"
+                      (optionSelected)="onCitySelected($event)">
+                      <mat-option *ngFor="let city of filteredCities$ | async" [value]="city">
+                        {{ city.city_nm }}
+                      </mat-option>
+                    </mat-autocomplete>
                   </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 60pt;">
-                    <mat-label class="form-label">State</mat-label>
-                    <input matInput formControlName="ptn_state" maxlength="2">
-                </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 70pt;">
                     <mat-label class="form-label">Zip</mat-label>
                     <input matInput formControlName="ptn_zip" numericOnly maxlength="9"> 

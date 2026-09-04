@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, HostListener, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PatientSearchService } from '../services/patients.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { FormBuilder } from '@angular/forms';
@@ -8,6 +9,7 @@ import { ServiceIcdDialogComponent } from './service-icd-dialog/service-icd-dial
 import { PatientSearchDialogComponent } from './patient-search-dialog/patient-search-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { GlobalService } from '../services/global.service';
 import { MatExpansionPanel } from '@angular/material/expansion';
 import { PdfComponent } from '../pdfgen/pdfgen.component';
@@ -29,7 +31,7 @@ import { Observable, map, startWith } from 'rxjs';
   templateUrl: './patients.component.html',
   styleUrls: ['./patients.component.scss']
 })
-export class PatientsComponent implements OnInit{
+export class PatientsComponent implements OnInit, AfterViewInit {
   @ViewChild('panel1') panel1!: MatExpansionPanel;
   @ViewChild('panelDx') panelDx!: MatExpansionPanel;
   searchQuery: string = '';
@@ -71,13 +73,17 @@ export class PatientsComponent implements OnInit{
   newCptModifier = '';
   newCptUnits = 1;
   newCptAmount: number | null = null;
-  newPayDate = '';
+  newPayDate: Date | string | null = null;
   newPayMethod = 'Check';
   newPayRef = '';
   newPayAmount: number | null = null;
   ssnReplaceMode = false;
   ssnLoading = false;
   savedSsnLast4 = '';
+  todayDate = this.endOfToday();
+  private savedDiagnosesSnapshot = '[]';
+  private savedServicesSnapshot = '{}';
+  private pendingSvcId: number | null = null;
 
   constructor(
     private patientSearchService: PatientSearchService,
@@ -85,7 +91,7 @@ export class PatientsComponent implements OnInit{
     private dialog: MatDialog,
     private globalService: GlobalService,
     private cdr: ChangeDetectorRef,
-    //private pdfService: PdfService
+    private route: ActivatedRoute
     ) {
     this.patientForm = this.fb.group({
       entity_id: [''],
@@ -93,7 +99,7 @@ export class PatientsComponent implements OnInit{
       ptn_last_nm: ['', [Validators.required, Validators.maxLength(30)]],
       ptn_first_nm: ['', [Validators.required, Validators.maxLength(30)]],
       ptn_mid_init: ['', [Validators.maxLength(3)]],
-      ptn_date_of_birth: [''],
+      ptn_date_of_birth: [null],
       ptn_active_flag: ['Y', [Validators.required, Validators.maxLength(1)]],
       ptn_address: ['', [Validators.maxLength(50)]],
       ptn_city: ['', [Validators.maxLength(35)]],
@@ -109,12 +115,17 @@ export class PatientsComponent implements OnInit{
       lw_id: [null],
       provider_id: [null],
       ic_id: [null],
-      ptn_date_of_accident: [''],
+      ptn_date_of_accident: [null],
       ptn_policy_no: ['', [Validators.maxLength(40)]],
       ptn_claim_no: ['', [Validators.maxLength(40)]],
       ptn_policyholder: ['', [Validators.maxLength(70)]]
     });
     this.citySearchCtrl.disable({ emitEvent: false });
+    this.markWorkspacePristine();
+  }
+
+  ngAfterViewInit(): void {
+    this.markWorkspacePristine();
   }
 
   ngOnInit(): void {
@@ -129,9 +140,32 @@ export class PatientsComponent implements OnInit{
       map((value) => this.filterCities(value))
     );
     this.loadLookups();
+    this.openPatientFromQuery();
     if (this.selectedOption) {
       this.patchPtnFormValues(this.selectedOption);
     }
+  }
+
+  private openPatientFromQuery(): void {
+    const ptnId = Number(this.route.snapshot.queryParamMap.get('ptnId'));
+    const svcId = Number(this.route.snapshot.queryParamMap.get('svcId'));
+    if (!Number.isFinite(ptnId) || ptnId <= 0) {
+      return;
+    }
+    this.pendingSvcId = Number.isFinite(svcId) && svcId > 0 ? svcId : null;
+    this.patientSearchService.getSearchPatients(this.entityId, 'S', String(ptnId)).subscribe({
+      next: (data) => {
+        if (data?.[0]) {
+          this.applySelectedPatient(data[0]);
+        } else {
+          this.showError('Patient not found');
+        }
+      },
+      error: (error) => {
+        console.error('Error opening patient from dashboard:', error);
+        this.showError('Could not open patient');
+      }
+    });
   }
 
   loadLookups(): void {
@@ -154,6 +188,10 @@ export class PatientsComponent implements OnInit{
   }
 
   onEnter(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.clearSearchResults();
+      return;
+    }
     if (event.key !== 'Enter' || !this.searchQuery.trim()) {
       return;
     }
@@ -193,24 +231,102 @@ export class PatientsComponent implements OnInit{
   }
 
   isPtnFormChanged(): boolean {
-    return this.patientForm.dirty;
+    return this.patientForm.dirty || this.hasUnsavedBillingChanges();
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.hasPendingChanges()) {
+      this.clearSearchResults();
+      return true;
+    }
+    return this.promptDiscardChanges();
+  }
+
+  @HostListener('document:keydown.escape')
+  onDocumentEscape(): void {
+    if (this.filteredOptions.length) {
+      this.clearSearchResults();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.filteredOptions.length) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.search-dropdown')) {
+      this.clearSearchResults();
+    }
   }
 
   private confirmDiscardChanges(onDiscard: () => void): void {
-    if (!this.isPtnFormChanged()) {
+    if (!this.hasPendingChanges()) {
+      this.clearSearchResults();
       onDiscard();
       return;
     }
-    const dialogRef = this.dialog.open(WarningModalComponent, {
-      data: {
-        message: 'You have unsaved patient changes. Discard them and continue?'
-      }
-    });
-    dialogRef.afterClosed().subscribe((confirmed) => {
+    this.promptDiscardChanges().then((confirmed) => {
       if (confirmed) {
         onDiscard();
       }
     });
+  }
+
+  private promptDiscardChanges(): Promise<boolean> {
+    this.clearSearchResults();
+    const dialogRef = this.dialog.open(WarningModalComponent, {
+      data: {
+        message: 'You have unsaved patient changes. Discard them and continue?',
+        confirmLabel: 'Discard',
+        cancelLabel: 'Stay'
+      }
+    });
+    return new Promise((resolve) => {
+      dialogRef.afterClosed().subscribe((confirmed) => {
+        this.clearSearchResults();
+        resolve(!!confirmed);
+      });
+    });
+  }
+
+  private hasPendingChanges(): boolean {
+    if (!this.selectedOption?.ptn_id && !this.hasUserEnteredPatientData()
+      && this.services.length === 0 && this.diagnoses.length === 0) {
+      return false;
+    }
+    return this.isPtnFormChanged();
+  }
+
+  private hasUserEnteredPatientData(): boolean {
+    const value = this.patientForm.getRawValue();
+    const filled = [
+      value.ptn_last_nm,
+      value.ptn_first_nm,
+      value.ptn_mid_init,
+      value.ptn_address,
+      value.ptn_city,
+      value.ptn_state,
+      value.ptn_zip,
+      value.ptn_home_phone,
+      value.ptn_mobile_phone,
+      value.ptn_ssn,
+      value.ptn_occupation,
+      value.ptn_comments,
+      value.ptn_policy_no,
+      value.ptn_claim_no,
+      value.ptn_policyholder
+    ].some((item) => String(item ?? '').trim() !== '');
+    return filled
+      || !!value.ptn_date_of_birth
+      || !!value.ptn_date_of_accident
+      || value.lw_id != null
+      || value.ic_id != null;
+  }
+
+  private markWorkspacePristine(): void {
+    this.patientForm.markAsPristine();
+    this.captureBillingSnapshot();
   }
 
   patchPtnFormValues(patientData: any): void {
@@ -220,7 +336,7 @@ export class PatientsComponent implements OnInit{
       ptn_address: patientData.ptn_address,
       ptn_city: '',
       ptn_comments: patientData.ptn_comments,
-      ptn_date_of_birth: this.formatDateForInput(patientData.ptn_date_of_birth),
+      ptn_date_of_birth: this.toDate(patientData.ptn_date_of_birth),
       ptn_first_nm: patientData.ptn_first_nm,
       ptn_home_phone: patientData.ptn_home_phone,
       ptn_id: patientData.ptn_id,
@@ -236,7 +352,7 @@ export class PatientsComponent implements OnInit{
       lw_id: patientData.lw_id != null ? Number(patientData.lw_id) : null,
       provider_id: patientData.provider_id != null ? Number(patientData.provider_id) : null,
       ic_id: patientData.ic_id != null ? Number(patientData.ic_id) : null,
-      ptn_date_of_accident: this.formatDateForInput(patientData.ptn_date_of_accident),
+      ptn_date_of_accident: this.toDate(patientData.ptn_date_of_accident),
       ptn_policy_no: patientData.ptn_policy_no || '',
       ptn_claim_no: patientData.ptn_claim_no || '',
       ptn_policyholder: patientData.ptn_policyholder || ''
@@ -260,6 +376,7 @@ export class PatientsComponent implements OnInit{
   }
 
   openAdvancedSearch(): void {
+    this.clearSearchResults();
     const seed = this.searchQuery.trim();
     const dialogRef = this.dialog.open(PatientSearchDialogComponent, {
       width: '78vw',
@@ -303,6 +420,7 @@ export class PatientsComponent implements OnInit{
   }
 
   onOptionClick(option: any): void {
+    this.clearSearchResults();
     this.confirmDiscardChanges(() => {
       this.applySelectedPatient(option);
     });
@@ -352,7 +470,8 @@ export class PatientsComponent implements OnInit{
         lw_id: null,
         provider_id: null,
         ic_id: null,
-        ptn_date_of_accident: '',
+        ptn_date_of_birth: null,
+        ptn_date_of_accident: null,
         ptn_policy_no: '',
         ptn_claim_no: '',
         ptn_policyholder: ''
@@ -366,7 +485,7 @@ export class PatientsComponent implements OnInit{
       this.ssnLoading = false;
       this.selectedOption = null;
       this.clearBillingWorkspace();
-      this.patientForm.markAsPristine();
+      this.markWorkspacePristine();
       setTimeout(() => this.panel1?.open());
     });
   }
@@ -643,8 +762,8 @@ export class PatientsComponent implements OnInit{
 
 
   validatePatientData(patientData: any): boolean {
-    patientData.ptn_date_of_birth = this.parseDateString(patientData.ptn_date_of_birth || '');
-    patientData.ptn_date_of_accident = this.parseDateString(patientData.ptn_date_of_accident || '');
+    patientData.ptn_date_of_birth = this.parseDateString(patientData.ptn_date_of_birth);
+    patientData.ptn_date_of_accident = this.parseDateString(patientData.ptn_date_of_accident);
 
     if (patientData.ptn_state) {
       patientData.ptn_state = String(patientData.ptn_state).trim().toUpperCase();
@@ -737,7 +856,8 @@ export class PatientsComponent implements OnInit{
             lw_id: null,
             provider_id: null,
             ic_id: null,
-            ptn_date_of_accident: '',
+            ptn_date_of_birth: null,
+            ptn_date_of_accident: null,
             ptn_policy_no: '',
             ptn_claim_no: '',
             ptn_policyholder: ''
@@ -752,7 +872,7 @@ export class PatientsComponent implements OnInit{
           this.selectedOption = null;
           this.isUpdateMode = false;
           this.clearBillingWorkspace();
-          this.patientForm.markAsPristine();
+          this.markWorkspacePristine();
         } else {
           this.showError('Patient is not deleted. ' + response.returntx, 5000);
         }
@@ -771,29 +891,63 @@ export class PatientsComponent implements OnInit{
     if (!this.validatePatientData(patientData)) {
       return;
     }
+    if (!this.validateAllServicesForSave()) {
+      return;
+    }
 
     this.patientSearchService.updatePatient(patientData).subscribe({
       next: (response) => {
-        this.showSuccess('Patient updated successfully!');
-        this.patientForm.reset();
-
-        this.patientSearchService.getSearchPatients(patientData.entity_id, 'S', patientData.ptn_id)
-          .subscribe({
-            next: (data) => {
-              this.filteredOptions = data;
-              if (this.filteredOptions[0]) {
-                this.applySelectedPatient(this.filteredOptions[0]);
-              }
-            },
-            error: (error) => {
-              console.error('Error fetching search results:', error);
-              this.showError('Error fetching search results');
-            }
-          });
+        this.saveServicesThenReloadPatient(patientData, 'Patient updated successfully!');
       },
       error: (error) => {
         console.error('Error updating patient:', error);
         this.showError('Error updating patient');
+      }
+    });
+  }
+
+  private saveServicesThenReloadPatient(patientData: any, successMessage: string): void {
+    const reload = () => {
+      this.showSuccess(successMessage);
+      this.patientForm.reset();
+      this.patientSearchService.getSearchPatients(patientData.entity_id, 'S', patientData.ptn_id)
+        .subscribe({
+          next: (data) => {
+            this.filteredOptions = data;
+            if (this.filteredOptions[0]) {
+              this.applySelectedPatient(this.filteredOptions[0]);
+            }
+          },
+          error: (error) => {
+            console.error('Error fetching search results:', error);
+            this.showError('Error fetching search results');
+          }
+        });
+    };
+
+    const ptnId = Number(patientData.ptn_id);
+    if (!ptnId) {
+      reload();
+      return;
+    }
+
+    const saveIcdThenReload = () => {
+      this.patientSearchService.savePatientIcd(ptnId, this.diagnoses).subscribe({
+        next: () => reload(),
+        error: (error) => {
+          console.error('Error saving diagnoses:', error);
+          this.showError('Could not save diagnoses');
+          reload();
+        }
+      });
+    };
+
+    this.patientSearchService.savePatientServices(ptnId, this.services).subscribe({
+      next: () => saveIcdThenReload(),
+      error: (error) => {
+        console.error('Error saving services:', error);
+        this.showError('Could not save services');
+        saveIcdThenReload();
       }
     });
   }
@@ -832,24 +986,43 @@ export class PatientsComponent implements OnInit{
     });
   }
 
-  formatDateForInput(dateString: string | null | undefined): string  {
+  formatDateForInput(value: string | Date | null | undefined): string  {
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) {
+        return '';
+      }
+      const month = ('0' + (value.getMonth() + 1)).slice(-2);
+      const day = ('0' + value.getDate()).slice(-2);
+      return `${month}/${day}/${value.getFullYear()}`;
+    }
+    const dateString = String(value ?? '').trim();
     if (!dateString) {
       return '';
     }
-    if (dateString && dateString.length === 8) {
+    if (dateString.length === 8 && /^\d{8}$/.test(dateString)) {
       // Assume format is mmddyyyy
       const month = dateString.slice(0, 2);
       const day = dateString.slice(2, 4);
       const year = dateString.slice(4, 8);
   
       // Check if the sliced parts form a valid date
-      const date = new Date(`${year}-${month}-${day}`);
-      if (!isNaN(date.getTime())) {
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      if (!isNaN(date.getTime()) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day)) {
         return `${month}/${day}/${year}`;
       } else {
         return ''; // Invalid date
       }
     } else {
+      const slash = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (slash) {
+        const month = slash[1].padStart(2, '0');
+        const day = slash[2].padStart(2, '0');
+        const year = slash[3];
+        const date = new Date(Number(year), Number(month) - 1, Number(day));
+        if (!isNaN(date.getTime()) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day)) {
+          return `${month}/${day}/${year}`;
+        }
+      }
       // Try to parse as a standard date string
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
@@ -863,7 +1036,23 @@ export class PatientsComponent implements OnInit{
     }
   }
 
-  parseDateString(dateString: string): string {
+  toDate(value: string | Date | null | undefined): Date | null {
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+    const formatted = this.formatDateForInput(value);
+    if (!formatted) {
+      return null;
+    }
+    const [month, day, year] = formatted.split('/');
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  parseDateString(dateString: string | Date | null | undefined): string {
+    if (dateString instanceof Date) {
+      return this.formatDateForInput(dateString);
+    }
     let trimmedDateString = '';
     if (!dateString) {
       return '';
@@ -872,6 +1061,10 @@ export class PatientsComponent implements OnInit{
       trimmedDateString = dateString.substring(0, 10);
     } else {
       trimmedDateString = dateString;
+    }
+    const slash = trimmedDateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) {
+      return this.formatDateForInput(trimmedDateString);
     }
     const dateObj = new Date(trimmedDateString);
     if (!isNaN(dateObj.getTime())) {
@@ -948,7 +1141,7 @@ export class PatientsComponent implements OnInit{
           amount: parseMoney(line.amount) || 0
         }))
       },
-      ptn_date_of_accident: this.patientForm.get('ptn_date_of_accident')?.value,
+      ptn_date_of_accident: this.parseDateString(this.patientForm.get('ptn_date_of_accident')?.value),
       ptn_policy_no: this.patientForm.get('ptn_policy_no')?.value,
       ptn_claim_no: this.patientForm.get('ptn_claim_no')?.value,
       ptn_policyholder: this.patientForm.get('ptn_policyholder')?.value
@@ -959,7 +1152,7 @@ export class PatientsComponent implements OnInit{
         if (!opened) {
           const link = document.createElement('a');
           link.href = url;
-          link.download = `NF-3-${svc.svc_date || 'service'}.pdf`;
+          link.download = `NF-3-${this.formatDateForInput(svc.svc_date) || 'service'}.pdf`;
           link.click();
         }
         setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -967,6 +1160,48 @@ export class PatientsComponent implements OnInit{
       error: (error) => {
         console.error('Error generating NF-3:', error);
         this.showError('Could not generate NF-3');
+      }
+    });
+  }
+
+  printAob(svc: PatientService, form: 'delivery' | 'aob', event?: Event): void {
+    event?.stopPropagation();
+    if (!this.selectedOption?.ptn_id) {
+      this.showError(form === 'aob' ? 'Select a patient before printing AOB' : 'Select a patient before printing the delivery list');
+      return;
+    }
+    if (!svc) {
+      return;
+    }
+    const label = form === 'aob' ? 'AOB' : 'delivery list';
+    this.patientSearchService.generateAob({
+      ptn_id: this.selectedOption.ptn_id,
+      form,
+      service: {
+        ...svc,
+        svc_id: Number(svc.svc_id) || 0,
+        lines: (svc.lines || []).map((line) => ({
+          ...line,
+          units: Number(line.units) || 1,
+          amount: parseMoney(line.amount) || 0
+        }))
+      },
+      ptn_date_of_accident: this.parseDateString(this.patientForm.get('ptn_date_of_accident')?.value)
+    }).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const opened = window.open(url, '_blank');
+        if (!opened) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${form === 'aob' ? 'AOB' : 'AOB-delivery'}-${this.formatDateForInput(svc.svc_date) || 'service'}.pdf`;
+          link.click();
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: (error) => {
+        console.error(`Error generating ${label}:`, error);
+        this.showError(`Could not generate ${label}`);
       }
     });
   }
@@ -1035,11 +1270,25 @@ export class PatientsComponent implements OnInit{
   }
 
   selectService(svc: PatientService): void {
-    if (this.selectedService && this.selectedService !== svc) {
-      this.persistServices();
+    if (!svc || svc === this.selectedService) {
+      return;
     }
-    this.selectedService = svc;
-    this.loadOfficeProviders(svc?.facility_id);
+    const targetId = Number(svc.svc_id);
+    const applySelection = () => {
+      const match = targetId > 0
+        ? this.services.find((item) => Number(item.svc_id) === targetId)
+        : this.services.find((item) => item === svc);
+      this.selectedService = match || this.services[0] || null;
+      this.loadOfficeProviders(this.selectedService?.facility_id);
+    };
+    if (this.servicesSnapshot() === this.savedServicesSnapshot) {
+      applySelection();
+      return;
+    }
+    this.confirmDiscardChanges(() => {
+      this.restoreBillingFromSnapshot();
+      applySelection();
+    });
   }
 
   addService(): void {
@@ -1128,14 +1377,18 @@ export class PatientsComponent implements OnInit{
     }
     if (added.length) {
       this.diagnoses = [...this.diagnoses, ...added];
-      this.persistDiagnoses();
     }
     return added.length;
   }
 
   removeDiagnosis(index: number): void {
     this.diagnoses = this.diagnoses.filter((_, i) => i !== index);
-    this.persistDiagnoses();
+  }
+
+  saveDiagnoses(event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+    this.persistDiagnoses('Diagnoses saved');
   }
 
   openServiceCptDialog(): void {
@@ -1201,40 +1454,66 @@ export class PatientsComponent implements OnInit{
     }
     if (newLines.length) {
       this.selectedService.lines = [...this.selectedService.lines, ...newLines];
-      this.persistServices();
     }
     return newLines.length;
   }
 
-  saveCptLines(): void {
+  saveService(): void {
     if (!this.selectedService) {
       this.showError('Select a service first');
       return;
     }
+    if (!this.hasUnsavedServiceChanges()) {
+      this.showError('No changes to save');
+      return;
+    }
+    this.selectedService.svc_date = this.formatDateForInput(this.selectedService.svc_date) || '';
+    if (!this.prepareServiceLinesForSave(this.selectedService)) {
+      return;
+    }
+    if (!this.preparePaymentsForSave(this.selectedService)) {
+      return;
+    }
+    this.persistServices('Service saved');
+  }
+
+  private validateAllServicesForSave(): boolean {
+    for (const svc of this.services) {
+      svc.svc_date = this.formatDateForInput(svc.svc_date) || '';
+      if (!this.prepareServiceLinesForSave(svc) || !this.preparePaymentsForSave(svc)) {
+        this.selectedService = svc;
+        this.loadOfficeProviders(svc.facility_id);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private prepareServiceLinesForSave(svc: PatientService): boolean {
     const saved: ServiceLine[] = [];
     const seen = new Set<string>();
-    for (const line of this.selectedService.lines) {
+    for (const line of svc.lines) {
       const code = String(line.cpt_code || '').trim().toUpperCase();
       if (!code) {
         this.showError('Every CPT line needs a code');
-        return;
+        return false;
       }
       const modifier = String(line.modifier || '').trim().toUpperCase();
       const key = this.cptLineKey(code, modifier);
       if (seen.has(key)) {
         this.showError(`Duplicate CPT ${code}${modifier ? '-' + modifier : ''} is not allowed`);
-        return;
+        return false;
       }
       seen.add(key);
       const units = Number(line.units);
       const amount = parseMoney(line.amount);
       if (!Number.isFinite(units) || units < 1) {
         this.showError(`Units for ${code} must be at least 1`);
-        return;
+        return false;
       }
       if (!Number.isFinite(amount) || amount < 0) {
         this.showError(`Amount for ${code} is invalid`);
-        return;
+        return false;
       }
       saved.push({
         cpt_code: code,
@@ -1244,8 +1523,33 @@ export class PatientsComponent implements OnInit{
         amount
       });
     }
-    this.selectedService.lines = saved;
-    this.persistServices('CPT lines saved');
+    svc.lines = saved;
+    return true;
+  }
+
+  private preparePaymentsForSave(svc: PatientService): boolean {
+    const saved: ServicePayment[] = [];
+    for (const pay of svc.payments || []) {
+      const payDate = this.formatDateForInput(pay.pay_date);
+      if (!payDate) {
+        this.showError('Every payment needs a date');
+        return false;
+      }
+      const amount = parseMoney(pay.amount);
+      if (!Number.isFinite(amount) || amount === 0) {
+        this.showError('Every payment needs an amount');
+        return false;
+      }
+      saved.push({
+        pay_date: payDate,
+        method: String(pay.method || 'Check').trim() || 'Check',
+        reference: String(pay.reference || '').trim(),
+        amount
+      });
+    }
+    svc.payments = saved;
+    this.syncServiceStatus(svc);
+    return true;
   }
 
   addCptLine(): void {
@@ -1276,7 +1580,6 @@ export class PatientsComponent implements OnInit{
       amount
     };
     this.selectedService.lines = [...this.selectedService.lines, line];
-    this.persistServices();
     this.newCptCode = '';
     this.newCptDesc = '';
     this.newCptModifier = '';
@@ -1289,33 +1592,33 @@ export class PatientsComponent implements OnInit{
       return;
     }
     this.selectedService.lines = this.selectedService.lines.filter((_, i) => i !== index);
-    this.persistServices();
   }
 
-  addPayment(): void {
+  addPaymentRow(): void {
     if (!this.selectedService) {
       return;
     }
-    const amount = parseMoney(this.newPayAmount);
-    if (!this.newPayDate.trim()) {
-      this.showError('Enter a payment date');
-      return;
-    }
-    if (!Number.isFinite(amount) || amount === 0) {
-      this.showError('Enter a payment amount');
-      return;
-    }
-    const payment: ServicePayment = {
-      pay_date: this.newPayDate.trim(),
-      method: this.newPayMethod,
-      reference: this.newPayRef.trim(),
-      amount
-    };
-    this.selectedService.payments = [...this.selectedService.payments, payment];
+    this.selectedService.payments = [
+      ...this.selectedService.payments,
+      {
+        pay_date: this.todayInput(),
+        method: 'Check',
+        reference: '',
+        amount: null as unknown as number
+      }
+    ];
     this.syncServiceStatus(this.selectedService);
-    this.newPayDate = '';
-    this.newPayRef = '';
-    this.newPayAmount = null;
+  }
+
+  onPaymentDateChange(pay: ServicePayment, event: MatDatepickerInputEvent<Date>): void {
+    pay.pay_date = this.formatDateForInput(event.value) || '';
+    this.onPaymentChange();
+  }
+
+  onPaymentChange(): void {
+    if (this.selectedService) {
+      this.syncServiceStatus(this.selectedService);
+    }
   }
 
   removePayment(index: number): void {
@@ -1350,7 +1653,13 @@ export class PatientsComponent implements OnInit{
       next: (data) => {
         this.diagnoses = data?.diagnoses || [];
         this.services = (data?.services || []).map((svc) => this.normalizeLoadedService(svc));
-        this.selectedService = this.services[0] || null;
+        const pendingId = this.pendingSvcId;
+        this.pendingSvcId = null;
+        this.selectedService =
+          (pendingId ? this.services.find((svc) => Number(svc.svc_id) === pendingId) : null) ||
+          this.services[0] ||
+          null;
+        this.captureBillingSnapshot();
         this.loadOfficeProviders(this.selectedService?.facility_id);
       },
       error: (error) => {
@@ -1366,10 +1675,20 @@ export class PatientsComponent implements OnInit{
     this.selectedService = null;
     this.officeProviders = [];
     this.resetDraftFields();
+    this.captureBillingSnapshot();
   }
 
-  persistServiceHeader(): void {
-    this.persistServices();
+  onServiceDateChange(event: MatDatepickerInputEvent<Date>): void {
+    if (!this.selectedService) {
+      return;
+    }
+    this.selectedService.svc_date = this.formatDateForInput(event.value) || '';
+  }
+
+  private endOfToday(): Date {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return today;
   }
 
   hasTreatingOffice(svc: PatientService | null = this.selectedService): boolean {
@@ -1384,7 +1703,6 @@ export class PatientsComponent implements OnInit{
     this.selectedService.facility_id = Number.isFinite(facilityId) && facilityId > 0 ? facilityId : null;
     this.selectedService.provider_id = null;
     this.loadOfficeProviders(this.selectedService.facility_id);
-    this.persistServiceHeader();
   }
 
   onServiceProviderChange(): void {
@@ -1394,7 +1712,6 @@ export class PatientsComponent implements OnInit{
       }
       return;
     }
-    this.persistServiceHeader();
   }
 
   private loadOfficeProviders(facilityId: number | null | undefined): void {
@@ -1476,14 +1793,19 @@ export class PatientsComponent implements OnInit{
     return row?.provider_nm || '';
   }
 
-  private persistDiagnoses(): void {
+  private persistDiagnoses(successMessage?: string): void {
     const ptnId = Number(this.selectedOption?.ptn_id);
     if (!ptnId) {
+      this.showError('Select a patient first');
       return;
     }
     this.patientSearchService.savePatientIcd(ptnId, this.diagnoses).subscribe({
       next: (data) => {
         this.diagnoses = data?.diagnoses || this.diagnoses;
+        this.captureDiagnosesSnapshot();
+        if (successMessage) {
+          this.showSuccess(successMessage);
+        }
       },
       error: (error) => {
         console.error('Error saving diagnoses:', error);
@@ -1513,6 +1835,8 @@ export class PatientsComponent implements OnInit{
           return;
         }
         this.applySavedServices(data?.services || []);
+        this.captureServicesSnapshot();
+        setTimeout(() => this.captureServicesSnapshot());
         if (successMessage) {
           this.showSuccess(successMessage);
         }
@@ -1581,12 +1905,106 @@ export class PatientsComponent implements OnInit{
         units: Number(line.units) || 1,
         amount: Number(line.amount) || 0
       })),
-      payments: svc.payments || []
+      payments: (svc.payments || []).map((pay) => ({
+        pay_date: this.formatDateForInput(pay.pay_date) || '',
+        method: String(pay.method || 'Check'),
+        reference: String(pay.reference || '').trim(),
+        amount: parseMoney(pay.amount) || Number(pay.amount) || 0
+      }))
     };
   }
 
   private cptLineKey(cptCode: string, modifier: string): string {
     return `${String(cptCode || '').trim().toUpperCase()}|${String(modifier || '').trim().toUpperCase()}`;
+  }
+
+  hasUnsavedServiceChanges(): boolean {
+    return this.servicesSnapshot() !== this.savedServicesSnapshot;
+  }
+
+  private hasUnsavedBillingChanges(): boolean {
+    return this.diagnosesSnapshot() !== this.savedDiagnosesSnapshot
+      || this.hasUnsavedServiceChanges();
+  }
+
+  private captureBillingSnapshot(): void {
+    this.captureDiagnosesSnapshot();
+    this.captureServicesSnapshot();
+  }
+
+  private captureDiagnosesSnapshot(): void {
+    this.savedDiagnosesSnapshot = this.diagnosesSnapshot();
+  }
+
+  private captureServicesSnapshot(): void {
+    this.savedServicesSnapshot = this.servicesSnapshot();
+  }
+
+  private restoreBillingFromSnapshot(): void {
+    try {
+      this.diagnoses = JSON.parse(this.savedDiagnosesSnapshot || '[]');
+      const parsed = JSON.parse(this.savedServicesSnapshot || '{}');
+      this.services = (parsed.services || []).map((svc: PatientService) => this.normalizeLoadedService(svc));
+      this.resetDraftFields();
+      const draft = parsed.draft || {};
+      this.newPayDate = draft.newPayDate || null;
+      this.newPayMethod = draft.newPayMethod || 'Check';
+      this.newPayRef = draft.newPayRef || '';
+      this.newPayAmount = draft.newPayAmount || null;
+      this.newCptCode = draft.newCptCode || '';
+      this.newCptDesc = draft.newCptDesc || '';
+      this.newCptModifier = draft.newCptModifier || '';
+      this.newCptUnits = Number(draft.newCptUnits) > 0 ? Number(draft.newCptUnits) : 1;
+      this.newCptAmount = draft.newCptAmount || null;
+    } catch {
+      this.loadServicesForPatient();
+    }
+  }
+
+  private diagnosesSnapshot(): string {
+    return JSON.stringify(
+      (this.diagnoses || []).map((dx) => ({
+        icd_code: String(dx.icd_code || '').trim().toUpperCase(),
+        description: String(dx.description || '').trim()
+      }))
+    );
+  }
+
+  private servicesSnapshot(): string {
+    return JSON.stringify({
+      services: (this.services || []).map((svc) => ({
+        svc_id: Number(svc.svc_id) || 0,
+        svc_date: this.formatDateForInput(svc.svc_date) || '',
+        facility_id: Number(svc.facility_id) > 0 ? Number(svc.facility_id) : null,
+        provider_id: Number(svc.provider_id) > 0 ? Number(svc.provider_id) : null,
+        status: String(svc.status || ''),
+        notes: String(svc.notes || '').trim(),
+        lines: (svc.lines || []).map((line) => ({
+          cpt_code: String(line.cpt_code || '').trim().toUpperCase(),
+          description: String(line.description || '').trim(),
+          modifier: String(line.modifier || '').trim().toUpperCase(),
+          units: Number(line.units) || 1,
+          amount: parseMoney(line.amount) || 0
+        })),
+        payments: (svc.payments || []).map((pay) => ({
+          pay_date: this.formatDateForInput(pay.pay_date) || '',
+          method: String(pay.method || ''),
+          reference: String(pay.reference || '').trim(),
+          amount: parseMoney(pay.amount) || 0
+        }))
+      })),
+      draft: {
+        newPayDate: this.formatDateForInput(this.newPayDate) || '',
+        newPayMethod: this.newPayMethod || 'Check',
+        newPayRef: String(this.newPayRef || '').trim(),
+        newPayAmount: parseMoney(this.newPayAmount) || 0,
+        newCptCode: String(this.newCptCode || '').trim().toUpperCase(),
+        newCptDesc: String(this.newCptDesc || '').trim(),
+        newCptModifier: String(this.newCptModifier || '').trim().toUpperCase(),
+        newCptUnits: Number(this.newCptUnits) > 0 ? Number(this.newCptUnits) : 1,
+        newCptAmount: parseMoney(this.newCptAmount) || 0
+      }
+    });
   }
 
   private resetDraftFields(): void {
@@ -1597,7 +2015,7 @@ export class PatientsComponent implements OnInit{
     this.newCptModifier = '';
     this.newCptUnits = 1;
     this.newCptAmount = null;
-    this.newPayDate = '';
+    this.newPayDate = null;
     this.newPayMethod = 'Check';
     this.newPayRef = '';
     this.newPayAmount = null;

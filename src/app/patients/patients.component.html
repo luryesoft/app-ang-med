@@ -26,7 +26,7 @@
         <mat-icon class="add-icon"
         [class.icon-disabled]="!selectedOption?.ptn_id"
         style="font-variation-settings: 'wght' 200;color:rgb(35, 92, 214);"
-        matTooltip="Generate PDF" (click)="generatePDFone()">picture_as_pdf</mat-icon>
+        matTooltip="Patient Info" (click)="generatePDFone()">picture_as_pdf</mat-icon>
 
         <mat-icon class="add-icon" 
         style="font-variation-settings: 'wght' 200;color:green;"
@@ -83,9 +83,13 @@
                 required
               </mat-error>
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+            <mat-form-field appearance="fill" class="form-field date-field">
               <mat-label class="form-label" >Date of Birth</mat-label>
-              <input matInput formControlName="ptn_date_of_birth"  mask="00/00/0000" placeholder="MM/DD/YYYY">
+              <input matInput dateMask maxlength="10" [matDatepicker]="pickerDob" formControlName="ptn_date_of_birth" [max]="todayDate" placeholder="MM/DD/YYYY">
+              <mat-datepicker-toggle matSuffix [for]="pickerDob" class="datepicker-toggle">
+                <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+              </mat-datepicker-toggle>
+              <mat-datepicker #pickerDob></mat-datepicker>
             </mat-form-field> 
               <mat-form-field appearance="fill" class="form-field" style="width: 90pt;">
               <mat-label class="form-label">Sex</mat-label>
@@ -186,9 +190,13 @@
                 </mat-form-field>
             </div>
             <div class="form-row">
-                <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+                <mat-form-field appearance="fill" class="form-field date-field">
                   <mat-label class="form-label">Date of Accident</mat-label>
-                  <input matInput formControlName="ptn_date_of_accident" mask="00/00/0000" placeholder="MM/DD/YYYY">
+                  <input matInput dateMask maxlength="10" [matDatepicker]="pickerAccident" formControlName="ptn_date_of_accident" [max]="todayDate" placeholder="MM/DD/YYYY">
+                  <mat-datepicker-toggle matSuffix [for]="pickerAccident" class="datepicker-toggle">
+                    <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+                  </mat-datepicker-toggle>
+                  <mat-datepicker #pickerAccident></mat-datepicker>
                 </mat-form-field>
                 <mat-form-field appearance="fill" class="form-field" style="width: 160pt;">
                   <mat-label class="form-label">Policy #</mat-label>
@@ -255,6 +263,12 @@
           </mat-panel-title>
           <mat-panel-description>
             <span>{{ diagnosisSummary }}</span>
+            <button
+              mat-stroked-button
+              type="button"
+              class="dx-save-btn"
+              (mousedown)="$event.stopPropagation()"
+              (click)="saveDiagnoses($event)">Save</button>
             <mat-icon
               class="add-icon"
               matTooltip="Select company ICD codes"
@@ -298,7 +312,7 @@
           <span><label>Insurance</label>{{ selectedInsuranceName }}</span>
           <span><label>Lawyer</label>{{ selectedLawyerName }}</span>
           <span><label>Provider</label>{{ companyName }}</span>
-          <span><label>Accident</label>{{ patientForm.get('ptn_date_of_accident')?.value || '—' }}</span>
+          <span><label>Accident</label>{{ formatDateForInput(patientForm.get('ptn_date_of_accident')?.value) || '—' }}</span>
           <span><label>Policy #</label>{{ patientForm.get('ptn_policy_no')?.value || '—' }}</span>
           <span><label>Claim #</label>{{ patientForm.get('ptn_claim_no')?.value || '—' }}</span>
           <span><label>Policyholder</label>{{ patientForm.get('ptn_policyholder')?.value || '—' }}</span>
@@ -328,6 +342,16 @@
                   class="svc-print-icon"
                   matTooltip="Print NF-3"
                   (click)="printNf3(svc, $event)">print</mat-icon>
+                <mat-icon
+                  class="svc-print-icon"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Print delivery list"
+                  (click)="printAob(svc, 'delivery', $event)">inventory_2</mat-icon>
+                <mat-icon
+                  class="svc-print-icon"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Print AOB"
+                  (click)="printAob(svc, 'aob', $event)">contract</mat-icon>
                 <span class="status-chip" [ngClass]="statusClass(svc.status)">{{ svc.status }}</span>
               </span>
             </div>
@@ -343,21 +367,49 @@
           <div class="section-hdr">
             <span>Service {{ selectedService.svc_date | date:'MM/dd/yyyy' }}</span>
             <div class="section-hdr-actions">
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="!hasUnsavedServiceChanges()"
+                (click)="saveService()">Save</button>
               <mat-icon
                 class="add-icon svc-print-icon"
                 matTooltip="Print NF-3"
                 (click)="printNf3(selectedService, $event)">print</mat-icon>
               <mat-icon
+                class="add-icon svc-print-icon"
+                fontSet="material-symbols-outlined"
+                matTooltip="Print delivery list"
+                (click)="printAob(selectedService, 'delivery', $event)">inventory_2</mat-icon>
+              <mat-icon
+                class="add-icon svc-print-icon"
+                fontSet="material-symbols-outlined"
+                matTooltip="Print AOB"
+                (click)="printAob(selectedService, 'aob', $event)">contract</mat-icon>
+              <mat-icon
                 class="delete-icon"
+                fontSet="material-symbols-outlined"
+                style="font-variation-settings: 'wght' 200;color:red;"
                 matTooltip="Delete this service"
                 (click)="confirmDeleteService()">delete_outline</mat-icon>
             </div>
           </div>
 
           <div class="svc-header-form">
-            <mat-form-field appearance="fill" class="form-field svc-field-date">
+            <mat-form-field appearance="fill" class="form-field date-field">
               <mat-label class="form-label">Date of service</mat-label>
-              <input matInput [(ngModel)]="selectedService.svc_date" mask="00/00/0000" placeholder="MM/DD/YYYY" (blur)="persistServiceHeader()">
+              <input matInput
+                dateMask
+                maxlength="10"
+                [matDatepicker]="pickerSvcDate"
+                [(ngModel)]="selectedService.svc_date"
+                (dateChange)="onServiceDateChange($event)"
+                [max]="todayDate"
+                placeholder="MM/DD/YYYY">
+              <mat-datepicker-toggle matSuffix [for]="pickerSvcDate" class="datepicker-toggle">
+                <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+              </mat-datepicker-toggle>
+              <mat-datepicker #pickerSvcDate></mat-datepicker>
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field svc-field-facility">
               <mat-label class="form-label">Treating office</mat-label>
@@ -393,13 +445,13 @@
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field svc-field-status">
               <mat-label class="form-label">Status</mat-label>
-              <mat-select [(ngModel)]="selectedService.status" (selectionChange)="persistServiceHeader()">
+              <mat-select [(ngModel)]="selectedService.status">
                 <mat-option *ngFor="let status of serviceStatuses" [value]="status">{{ status }}</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field svc-field-notes">
               <mat-label class="form-label">Service notes</mat-label>
-              <input matInput [(ngModel)]="selectedService.notes" maxlength="200" (blur)="persistServiceHeader()">
+              <input matInput [(ngModel)]="selectedService.notes" maxlength="200">
             </mat-form-field>
           </div>
 
@@ -424,7 +476,6 @@
             <div class="section-hdr">
               <span>Service details (CPT)</span>
               <div class="section-hdr-actions">
-                <button mat-stroked-button type="button" (click)="saveCptLines()">Save</button>
                 <mat-icon
                   class="add-icon"
                   matTooltip="Select company CPT codes"
@@ -479,11 +530,22 @@
           <div class="detail-card">
             <div class="section-hdr">
               <span>Payments</span>
+              <div class="section-hdr-actions">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!hasUnsavedServiceChanges()"
+                  (click)="saveService()">Save</button>
+                <mat-icon
+                  class="add-icon"
+                  matTooltip="Add payment"
+                  (click)="addPaymentRow()">playlist_add</mat-icon>
+              </div>
             </div>
             <div *ngIf="selectedService.payments.length === 0" class="empty-hint">
-              Record insurer or patient payments against this service.
+              Use the add icon to record a payment. Edit the row, then Save.
             </div>
-            <table class="billing-table" *ngIf="selectedService.payments.length > 0">
+            <table class="billing-table pay-edit-table" *ngIf="selectedService.payments.length > 0">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -495,48 +557,50 @@
               </thead>
               <tbody>
                 <tr *ngFor="let pay of selectedService.payments; let i = index">
-                  <td>{{ pay.pay_date | date:'MM/dd/yyyy' }}</td>
-                  <td>{{ pay.method }}</td>
-                  <td>{{ pay.reference }}</td>
-                  <td class="num">{{ pay.amount | currency:'USD':'symbol':'1.2-2' }}</td>
+                  <td>
+                    <mat-form-field appearance="fill" class="form-field date-field pay-date-field">
+                      <mat-label class="form-label">Pay date</mat-label>
+                      <input matInput
+                        dateMask
+                        maxlength="10"
+                        [matDatepicker]="pickerPay"
+                        [(ngModel)]="pay.pay_date"
+                        (dateChange)="onPaymentDateChange(pay, $event)"
+                        [max]="todayDate"
+                        placeholder="MM/DD/YYYY">
+                      <mat-datepicker-toggle matSuffix [for]="pickerPay" class="datepicker-toggle">
+                        <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+                      </mat-datepicker-toggle>
+                      <mat-datepicker #pickerPay></mat-datepicker>
+                    </mat-form-field>
+                  </td>
+                  <td>
+                    <select class="cell-input pay-method-select" [(ngModel)]="pay.method" (ngModelChange)="onPaymentChange()">
+                      <option value="Check">Check</option>
+                      <option value="EFT">EFT</option>
+                      <option value="Patient">Patient</option>
+                      <option value="Adjustment">Adjustment</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input class="cell-input" maxlength="30" [(ngModel)]="pay.reference">
+                  </td>
+                  <td class="num">
+                    <input class="cell-input cell-num" type="text"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      prefix="$ "
+                      [dropSpecialCharacters]="true"
+                      [allowNegativeNumbers]="false"
+                      [(ngModel)]="pay.amount"
+                      (ngModelChange)="onPaymentChange()">
+                  </td>
                   <td>
                     <mat-icon class="row-remove" matTooltip="Remove payment" (click)="removePayment(i)">close</mat-icon>
                   </td>
                 </tr>
               </tbody>
             </table>
-            <div class="inline-add">
-              <mat-form-field appearance="fill" class="form-field add-date">
-                <mat-label class="form-label">Pay date</mat-label>
-                <input matInput [(ngModel)]="newPayDate" mask="00/00/0000" placeholder="MM/DD/YYYY">
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field add-method">
-                <mat-label class="form-label">Method</mat-label>
-                <mat-select [(ngModel)]="newPayMethod">
-                  <mat-option value="Check">Check</mat-option>
-                  <mat-option value="EFT">EFT</mat-option>
-                  <mat-option value="Patient">Patient</mat-option>
-                  <mat-option value="Adjustment">Adjustment</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field add-desc">
-                <mat-label class="form-label">Reference</mat-label>
-                <input matInput [(ngModel)]="newPayRef" maxlength="30" (keydown.enter)="addPayment()">
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field add-amt">
-                <mat-label class="form-label">Amount</mat-label>
-                <input matInput
-                  mask="separator.2"
-                  thousandSeparator=","
-                  prefix="$ "
-                  [dropSpecialCharacters]="true"
-                  [allowNegativeNumbers]="false"
-                  [(ngModel)]="newPayAmount"
-                  placeholder="$ 0.00"
-                  (keydown.enter)="addPayment()">
-              </mat-form-field>
-              <button mat-stroked-button type="button" (click)="addPayment()">Add payment</button>
-            </div>
           </div>
         </div>
 

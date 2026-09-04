@@ -8,6 +8,14 @@ mat-panel-description {
   align-items: center;
 }
 
+.dx-save-btn {
+  margin-left: auto;
+  min-width: 64px;
+  line-height: 28px;
+  height: 32px;
+  padding: 0 12px;
+}
+
 mat-icon {
   margin-left: 8px;
   transition: transform 0.3s;
@@ -323,6 +331,10 @@ mat-icon {
   cursor: pointer;
 }
 
+.delete-icon {
+  color: red;
+}
+
 .section-hdr-actions {
   display: flex;
   align-items: center;
@@ -333,6 +345,43 @@ mat-icon {
 .section-hdr-actions .add-icon,
 .section-hdr-actions .delete-icon {
   margin-left: 0;
+}
+
+.section-hdr-actions button {
+  min-width: 64px;
+  line-height: 28px;
+  height: 32px;
+  padding: 0 12px;
+}
+
+.pay-edit-table .cell-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 3px 5px;
+  font-size: 13px;
+}
+
+.pay-edit-table .cell-num {
+  width: 90px;
+  text-align: right;
+}
+
+.pay-edit-table td {
+  vertical-align: middle;
+}
+
+.pay-date-field {
+  margin: 0;
+}
+
+.pay-method-select {
+  min-width: 110px;
+}
+
+.section-hdr-actions button:disabled {
+  opacity: 0.45;
 }
 
 .cpt-edit-table .cell-input {
@@ -422,10 +471,6 @@ mat-icon {
   padding: 8px 4px 0;
 }
 
-.svc-field-date {
-  width: 130px;
-}
-
 .svc-field-facility {
   width: 220px;
 }
@@ -508,7 +553,7 @@ mat-icon {
   font-size: 18px;
   width: 18px;
   height: 18px;
-  color: #888;
+  color: red;
 }
 
 .add-code {
@@ -527,10 +572,6 @@ mat-icon {
 
 .add-amt {
   width: 140px;
-}
-
-.add-date {
-  width: 120px;
 }
 
 .add-method {
@@ -588,6 +629,39 @@ mat-icon {
 .status-open {
   background-color: #e8eefc;
   color: #235cd6;
+}
+
+/* MM/DD/YYYY (~108px) + left pad 16px + icon 24px + gaps 16px */
+.date-field {
+  width: 164px;
+  flex: 0 0 164px;
+}
+
+:host ::ng-deep .date-field {
+  .mat-mdc-form-field-infix {
+    min-width: 0;
+    width: auto;
+  }
+
+  .mat-mdc-form-field-icon-suffix {
+    padding: 0 4px 0 0;
+  }
+}
+
+:host ::ng-deep .datepicker-toggle button.mat-mdc-icon-button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+.datepicker-toggle-icon {
+  margin: 0 !important;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  color: #235cd6;
+  font-variation-settings: 'wght' 300, 'opsz' 20;
 }
 
 

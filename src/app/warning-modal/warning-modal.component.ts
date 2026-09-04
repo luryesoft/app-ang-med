@@ -9,7 +9,11 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 export class WarningModalComponent {
   constructor(
     private dialogRef: MatDialogRef<WarningModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { message: string }
+    @Inject(MAT_DIALOG_DATA) public data: {
+      message: string;
+      confirmLabel?: string;
+      cancelLabel?: string;
+    }
   ) {}
 
   ngOnInit(): void {

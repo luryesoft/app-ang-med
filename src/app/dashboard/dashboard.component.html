@@ -1,22 +1,42 @@
+<div class="dashboard">
+  <div class="dashboard-hdr">
+    <span class="dashboard-title">Work queues</span>
+    <span class="dashboard-hint">One row per service. Click to open that visit.</span>
+  </div>
 
-<div style="font-size: small; margin-left: 20px;margin-top: 1rem; ">
+  <div class="dashboard-loading" *ngIf="loading">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
 
-    In a well-structured application, SQL queries, including SELECT statements,
-    should not be placed directly in the routes. <br>Instead, they should be encapsulated
-    within the models or services. This approach promotes separation of concerns, <br>
-    making your code more modular, maintainable, and testable.<br>
-    <strong><em>Here's a breakdown of where different parts of your code should reside:</em></strong><br>
-    <strong>1.Routes:</strong> Handle HTTP requests and responses. They should call the appropriate service methods <br>
-    to perform business logic and database operations.<br>
-    <strong>2.Controllers:</strong> (optional but recommended for larger applications): Act as intermediaries between <br>
-    the routes and services. They handle request validation, call service methods, and format the response.<br>
-    <strong>3.Services:</strong> Contain business logic and interact with the models to perform database operations.<br>
-    <strong>4.Models:</strong> Define the database schema and contain methods for interacting with the database (e.g., SQL queries).   
-</div>   
-<!--
-<div class="mat-display-1">
-    Display 1 Text
+  <div class="dashboard-error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+
+  <div class="queue-grid" *ngIf="!loading && !errorMessage">
+    <section class="queue-card" *ngFor="let queue of queueViews">
+      <div class="queue-hdr">
+        <div>
+          <div class="queue-title">{{ queue.title }}</div>
+            <div class="queue-sub">{{ queue.hint }}</div>
+        </div>
+        <span class="queue-count">{{ countFor(queue.key) }}</span>
+      </div>
+      <div class="queue-empty" *ngIf="rowsFor(queue.key).length === 0">None</div>
+      <button
+        type="button"
+        class="queue-row"
+        *ngFor="let row of rowsFor(queue.key)"
+        (click)="openPatient(row)">
+        <div class="queue-row-main">
+          <span class="queue-name">
+            {{ row.ptn_last_nm }}, {{ row.ptn_first_nm }}
+            <span class="queue-id">({{ row.ptn_id }})</span>
+          </span>
+          <span class="queue-service">{{ serviceLine(row) }}</span>
+        </div>
+        <div class="queue-row-side">
+          <span class="status-chip" [ngClass]="statusClass(row.status)">{{ row.status }}</span>
+          <span class="queue-extra" [class.queue-extra-aging]="queue.key === 'outstanding' && isAging(row)">{{ extraFor(queue.key, row) }}</span>
+        </div>
+      </button>
+    </section>
+  </div>
 </div>
--->
-
-

@@ -5,6 +5,37 @@ import { DiagnosisCode, PatientService } from '../models/patient-service.model';
 import { parseMoney } from '../pipes/numeric-only.directive';
 import { environment } from '../../environments/environment';
 
+export interface WorkQueueItem {
+  ptn_id: number;
+  ptn_last_nm: string;
+  ptn_first_nm: string;
+  ptn_claim_no: string;
+  svc_id: number;
+  svc_date: string;
+  status: string;
+  facility_nm: string;
+  provider_nm: string;
+  billed: number;
+  paid: number;
+  balance: number;
+  age_days: number | null;
+  age_bucket: string;
+  missing: string[];
+}
+
+export interface WorkQueues {
+  outstanding: WorkQueueItem[];
+  billedPartial: WorkQueueItem[];
+  denied: WorkQueueItem[];
+  incomplete: WorkQueueItem[];
+  counts: {
+    outstanding: number;
+    billedPartial: number;
+    denied: number;
+    incomplete: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -96,6 +127,19 @@ export class PatientSearchService {
     return this.http.post(`${this.apiUrl}/nf3`, payload, { responseType: 'blob' });
   }
 
+  generateAob(payload: {
+    ptn_id: number;
+    form: 'delivery' | 'aob';
+    service: any;
+    ptn_date_of_accident?: string;
+  }): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/aob`, payload, { responseType: 'blob' });
+  }
+
+  getWorkQueues(): Observable<WorkQueues> {
+    return this.http.get<WorkQueues>(`${this.apiUrl}/work-queues`);
+  }
+
   getPatientBilling(ptnId: number): Observable<{ diagnoses: DiagnosisCode[]; services: PatientService[] }> {
     return this.http.get<{ diagnoses: DiagnosisCode[]; services: PatientService[] }>(
       `${this.apiUrl}/billing/${ptnId}`
@@ -120,7 +164,7 @@ export class PatientSearchService {
       ptn_id: ptnId,
       services: services.map((svc) => ({
         svc_id: svc.svc_id,
-        svc_date: svc.svc_date,
+        svc_date: this.toApiDate(svc.svc_date),
         facility_id: svc.facility_id,
         provider_id: svc.provider_id,
         status: svc.status,
@@ -129,8 +173,23 @@ export class PatientSearchService {
           ...line,
           amount: parseMoney(line.amount) || 0,
           units: Number(line.units) || 1
+        })),
+        payments: (svc.payments || []).map((pay) => ({
+          pay_date: this.toApiDate(pay.pay_date),
+          method: pay.method,
+          reference: pay.reference,
+          amount: parseMoney(pay.amount) || 0
         }))
       }))
     });
+  }
+
+  private toApiDate(value: unknown): string {
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      const month = ('0' + (value.getMonth() + 1)).slice(-2);
+      const day = ('0' + value.getDate()).slice(-2);
+      return `${month}/${day}/${value.getFullYear()}`;
+    }
+    return String(value ?? '').trim();
   }
 }

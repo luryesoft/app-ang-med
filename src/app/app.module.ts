@@ -24,7 +24,8 @@ import { FacilitiesComponent } from './facilities/facilities.component';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatOptionModule } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_LOCALE, MatNativeDateModule, MatOptionModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { WarningModalComponent } from './warning-modal/warning-modal.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ProvidersComponent } from './providers/providers.component';
@@ -52,9 +53,11 @@ import { PatientSearchDialogComponent } from './patients/patient-search-dialog/p
 import { ReportsComponent } from './reports/reports.component';
 import { SsnMaskPipe } from './pipes/ssn-mask.pipe';
 import { NumericOnlyDirective } from './pipes/numeric-only.directive';
+import { DateInputMaskDirective } from './pipes/date-input-mask.directive';
 import { NgxMaskDirective ,  provideNgxMask} from 'ngx-mask'; 
 import { JwtInterceptor } from './auth/jwt.interceptor';
 import { PdfComponent } from './pdfgen/pdfgen.component';
+import { MmddyyyyDateAdapter } from './pipes/mmddyyyy-date-adapter';
 
 
 @NgModule({
@@ -79,6 +82,7 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     PatientSearchDialogComponent,
     SsnMaskPipe,
     NumericOnlyDirective,
+    DateInputMaskDirective,
    // ReportsComponent,
    PdfComponent
   ],
@@ -116,13 +120,17 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     MatDialogModule,
     MatButtonToggleModule,
     MatProgressSpinnerModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     NgxMaskDirective
   ],
   providers: [ 
     provideHttpClient(withInterceptorsFromDi()),
     CanDeactivateGuard,
     provideNgxMask(),
-    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
+    { provide: MAT_DATE_LOCALE, useValue: 'en-US' },
+    { provide: DateAdapter, useClass: MmddyyyyDateAdapter }
    ]
 })
 export class AppModule { }

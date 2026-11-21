@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { PdfService } from '../services/pdf.service';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -23,8 +23,10 @@ export interface PatientChartPdfContext {
 }
 
 @Component({
-  selector: 'app-pdf',
-  template: `<button (click)="generatePDF()">Generate PDF</button>`
+    selector: 'app-pdf',
+    template: `<button (click)="generatePDF()">Generate PDF</button>`,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class PdfComponent {
 

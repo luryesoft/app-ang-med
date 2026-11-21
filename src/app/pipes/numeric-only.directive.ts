@@ -9,7 +9,8 @@ export function parseMoney(value: unknown): number {
 }
 
 @Directive({
-  selector: '[numericOnly]'
+    selector: '[numericOnly]',
+    standalone: false
 })
 export class NumericOnlyDirective {
 

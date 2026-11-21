@@ -1,12 +1,13 @@
-import { Component, OnInit, ViewEncapsulation  } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { LawFirmService } from '../services/law-firm.service';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { WarningModalComponent } from '../warning-modal/warning-modal.component';
+import { ChangeDetectionStrategy, Component, computed, effect, signal, ViewEncapsulation } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { email, form, maxLength, required, submit, validate } from '@angular/forms/signals';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { PhoneNumberService } from '../services/phone-number.service';
-
+import { LawFirmService } from '../services/law-firm.service';
+import { WarningModalComponent } from '../warning-modal/warning-modal.component';
 
 interface LawFirm {
   lw_id: number;
@@ -24,346 +25,259 @@ interface LawFirm {
   active_in: string;
 }
 
+interface LawFirmFormModel {
+  lw_id: number;
+  lw_nm: string;
+  lw_address_tx: string;
+  lw_city: string;
+  lw_zip_cd: string;
+  lw_state: string;
+  lw_phone: string;
+  lw_email: string;
+  lw_npi: string;
+  lw_ein: string;
+  updated_by: string;
+  active_in: string;
+  entity_id: number;
+}
 
+function blankLawFirm(): LawFirmFormModel {
+  return {
+    lw_id: 0,
+    lw_nm: '',
+    lw_address_tx: '',
+    lw_city: '',
+    lw_zip_cd: '',
+    lw_state: '',
+    lw_phone: '',
+    lw_email: '',
+    lw_npi: '',
+    lw_ein: '',
+    updated_by: sessionStorage.getItem('userId') ?? '',
+    active_in: 'Y',
+    entity_id: Number(sessionStorage.getItem('companyId')) || 0,
+  };
+}
 
 @Component({
   selector: 'app-law-firm',
   standalone: false,
   templateUrl: './law-firm.component.html',
   styleUrls: ['./law-firm.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None
 })
+export class LawFirmComponent {
+  readonly isEditMode = signal(true);
+  readonly selectedLawOffice = signal<LawFirm | null>(null);
+  readonly filterQuery = signal('');
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly showPopup = signal(false);
+  readonly showSuccessPopup = signal(false);
 
+  private readonly listOfficeId = signal(Number(sessionStorage.getItem('officeId')) || 0);
+  private readonly lawFirmsResource = httpResource<LawFirm[]>(
+    () => `${environment.apiUrl}/law-firms/by-office-id/${this.listOfficeId()}`,
+    { defaultValue: [] }
+  );
 
+  readonly lawOffices = computed(() =>
+    [...(this.lawFirmsResource.value() ?? [])].sort((a, b) =>
+      (a.lw_nm ?? '').toLowerCase().localeCompare((b.lw_nm ?? '').toLowerCase())
+    )
+  );
 
-export class LawFirmComponent implements OnInit  {
-  lawOffices: LawFirm[] = [];
-  selectedLawOffice: LawFirm | null = null;
-  lawOfficeForm!: FormGroup;
-  errorMessage: string = '';
-  successMessage: string = '';
-  showPopup: boolean = false;
-  showSuccessPopup: boolean = false; 
-  selectedLawOfficeType: number | null = null;
-  isEditMode: boolean = true;
-  isChecked: boolean = true;
-  isIconChecked: boolean = false;
-  isActive: boolean = false; 
-  filteredLawOffices: LawFirm[] = [];
-  filterQuery: string = '';
-  lw_id: number = 0;
+  readonly filteredLawOffices = computed(() => {
+    const query = this.filterQuery().trim().toLowerCase();
+    const offices = this.lawOffices();
+    if (!query) {
+      return offices;
+    }
+    return offices.filter(lawOffice => (lawOffice.lw_nm ?? '').toLowerCase().includes(query));
+  });
 
-  constructor(private lawFirmService: LawFirmService, 
-    private fb: FormBuilder, 
+  readonly lawFirmModel = signal(blankLawFirm());
+  readonly lawFirmForm = form(this.lawFirmModel, office => {
+    required(office.lw_nm);
+    required(office.lw_address_tx);
+    required(office.lw_city);
+    required(office.lw_zip_cd);
+    required(office.lw_state);
+    maxLength(office.lw_state, 2);
+    maxLength(office.lw_ein, 250);
+    maxLength(office.lw_npi, 100);
+    required(office.lw_email, { when: () => !this.isEditMode() });
+    email(office.lw_email);
+    required(office.lw_phone, { when: () => !this.isEditMode() });
+    validate(office.lw_phone, ({ value }) => {
+      if (!this.isEditMode() || this.phoneNumberService.isValidPhoneNumber(value())) {
+        return undefined;
+      }
+      return {
+        kind: 'phone',
+        message: 'The phone number must have at least 8 digits, separated by dashes',
+      };
+    });
+  });
+
+  constructor(
+    private lawFirmService: LawFirmService,
     private dialog: MatDialog,
-    private phoneNumberService: PhoneNumberService ) { 
- 
-    this.lawOfficeForm = this.fb.group({
-      lw_nm: ['', Validators.required],
-      lw_address_tx: ['', Validators.required],
-      lw_city: ['', Validators.required],
-      lw_zip_cd: ['', Validators.required],
-      lw_state: ['', Validators.maxLength(2)],
-      lw_phone: [''],
-      lw_email: [''],
-      lw_npi: [''],
-      lw_ein: [''],
-      lw_id: ['', Validators.required],
-      updated_by: [sessionStorage.getItem('userId')],
-      active_in: ['']
-    });
-
-  }
- 
-  facility_id = 0;
-
-
-  ngOnInit(): void {
-    this.lawOfficeForm = this.fb.group({
-      lw_nm: ['', Validators.required],
-      lw_npi: [''],
-      lw_ein: [''],
-      lw_address_tx: ['', Validators.required],
-      lw_city: ['', Validators.required],
-      lw_state: ['', [Validators.required, Validators.maxLength(2)]],
-      lw_zip_cd: ['', Validators.required],
-      lw_email: [''],
-      lw_phone: [''],
-      lw_id: [''],
-      updated_by: [sessionStorage.getItem('userId')],
-      active_in: ['']
-    });
-  
-    this.lawFirmService.getLawFirmsByOfficeId(Number(sessionStorage.getItem('officeId')) ).then(
-      (data: LawFirm[]) => {
-        console.log('Law Office:', data);
-        this.isActive = data.some(lawOffice => lawOffice.active_in === 'Y');
-         this.lawOffices = data.sort((a, b) => 
-          a.lw_nm.toLowerCase().localeCompare(b.lw_nm.toLowerCase())
-        );
-        this.filteredLawOffices = this.lawOffices;
-      },
-      (error: any) => {
+    private phoneNumberService: PhoneNumberService
+  ) {
+    effect(() => {
+      const error = this.lawFirmsResource.error();
+      if (error) {
         console.error('Error fetching law offices:', error);
       }
-    );
-
-
-
-  }
-  initializeLawOfficeForm(): void {
-    this.lawOfficeForm = this.fb.group({
-      lw_nm: ['', Validators.required],
-      lw_ein: [''],
-      lw_npi: [''],
-      lw_address_tx: ['', Validators.required],
-      lw_city: ['', Validators.required],
-      lw_state: ['', [Validators.required, Validators.maxLength(2)]],
-      lw_zip_cd: ['', Validators.required],
-      lw_email:  ['', [Validators.required, Validators.email]],
-      lw_phone: ['', Validators.required],
-      updated_by: [sessionStorage.getItem('userId')],
-      active_in: ['Y', Validators.required]
     });
-    console.log('Law Office Form Initialized');
   }
-
 
   selectLawOffice(lawOffice: LawFirm): void {
-    this.selectedLawOffice = lawOffice;
-    this.lawOfficeForm.patchValue({
-      lw_nm: lawOffice.lw_nm, 
-      lw_address_tx: lawOffice.lw_address_tx, 
-      lw_city: lawOffice.lw_city,
-      lw_zip_cd: lawOffice.lw_zip_cd,
-      lw_state: lawOffice.lw_state,
-      lw_phone: lawOffice.lw_phone,
-      lw_email: lawOffice.lw_email,
-      lw_npi: lawOffice.lw_npi,
-      lw_ein: lawOffice.lw_ein,
+    this.isEditMode.set(true);
+    this.selectedLawOffice.set(lawOffice);
+    this.lawFirmForm().reset({
       lw_id: lawOffice.lw_id,
-      updated_by: lawOffice.updated_by,
-      active_in: lawOffice.active_in
+      lw_nm: lawOffice.lw_nm ?? '',
+      lw_address_tx: lawOffice.lw_address_tx ?? '',
+      lw_city: lawOffice.lw_city ?? '',
+      lw_zip_cd: lawOffice.lw_zip_cd ?? '',
+      lw_state: lawOffice.lw_state ?? '',
+      lw_phone: lawOffice.lw_phone ?? '',
+      lw_email: lawOffice.lw_email ?? '',
+      lw_npi: lawOffice.lw_npi ?? '',
+      lw_ein: lawOffice.lw_ein ?? '',
+      updated_by: lawOffice.updated_by ?? sessionStorage.getItem('userId') ?? '',
+      active_in: lawOffice.active_in ?? 'N',
+      entity_id: Number(sessionStorage.getItem('companyId')) || 0,
     });
-    this.isEditMode = true;
-    this.lw_id = lawOffice.lw_id;
-    console.log('Law Office Selected:', this.selectedLawOffice, this.isActive);
-    this.isIconChecked = lawOffice.active_in === 'Y';
-    this.isActive = lawOffice.active_in === 'Y';
-}
-
-
-  
-switchToAddMode(): void {
-  console.log('Switching to add mode');
-  this.isEditMode = false;
-  this.selectedLawOffice = null;
-  this.initializeLawOfficeForm();
-}
-
-setEditMode(updatedLawOffice: LawFirm): void {
-  this.isEditMode = true;
-  this.selectedLawOffice = updatedLawOffice;
-  this.lawOfficeForm.patchValue(updatedLawOffice);
-  console.log('Switched to edit mode with updated law office:', updatedLawOffice);
-}
-onSubmit(): void {
-  this.checkFormValidity();
-  if (this.lawOfficeForm.valid) {
-    console.log('Form on Submit:', this.lawOfficeForm.value);
-    this.lawOfficeForm.patchValue({ when_updated: Date.now() }); // Update timestamp before submission
-    if (this.isEditMode) {
-      this.updateLawOffice();
-    } else {
-      this.addLawOffice();
-    }
-  } else {
-    console.error('Form is invalid');
-    console.warn('Form is not complited');
-    this.errorMessage = 'Please complete the form';
-    this.showPopup = true;
-    setTimeout(() => this.showPopup = false, 5000);
-    return;
   }
-}
 
-updateLawOffice(): void {
-  const phone = this.lawOfficeForm.get('lw_phone')?.value;
-  if (this.validatePhoneNumber(phone)) {
-    console.log('Phone number is valid');
-  } else {
-    console.warn('Invalid phone number');
-    this.errorMessage = 'The phone number must have at least 8 digits, separated by dashes';
-    this.showPopup = true;
-    setTimeout(() => this.showPopup = false, 5000);
-    return;
+  switchToAddMode(): void {
+    this.isEditMode.set(false);
+    this.selectedLawOffice.set(null);
+    this.lawFirmForm().reset(blankLawFirm());
   }
-  const lawOfficeData = this.lawOfficeForm.value;
-  lawOfficeData.lw_id = this.lw_id;
-  lawOfficeData.updated_by = sessionStorage.getItem('userId');
 
-  console.log('Form Submitted:', lawOfficeData);
-  // Add logic to save the facility data, e.g., call a service method
-  this.lawFirmService.updateLawFirm(lawOfficeData).subscribe(
-    (response: { returncd: number; returntx: string }) => {
-      console.log('Law Office updated successfully:', response.returntx);
-      // Handle the response as needed
-      this.successMessage = 'Law Office updated successfully!';
-      this.showSuccessPopup = true;
-      setTimeout(() => this.showSuccessPopup = false, 3000);
-      this.refreshData();
-
-      this.lawOfficeForm.reset();
-      this.selectedLawOffice = null;
-      //this.isEditMode = false;
-    },
-    (error: any) => {
-      console.error('Error updating:', error);
-      this.errorMessage = this.extractErrorMessage(error);
-      this.showPopup = true;
-      setTimeout(() => this.showPopup = false, 3000);
-    }
-  );
-}
-
-addLawOffice(): void {
-  
-    const newLawOffice = this.lawOfficeForm.value;
-    newLawOffice.entity_id = Number(sessionStorage.getItem('companyId')); 
-    newLawOffice.lw_id = 0; 
-    newLawOffice.updated_by = sessionStorage.getItem('userId');
-    console.log('New Law Office:', newLawOffice);
-    this.lawFirmService.insertLawFirm(newLawOffice).subscribe(
-      (response: { returncd: number; returntx: string }) => {
-       // this.lawOffices.push(response.returntx);
-        this.successMessage = 'Law Office added successfully!';
-        this.showSuccessPopup = true; 
-        setTimeout(() => this.showSuccessPopup = false, 3000);
-        this.refreshData();
-        console.log('Refresh Edit Mode Law Office:', response.returntx);
-        this.setEditMode(null as any);
-        //this.selectLawOffice(lawOffice);
-        this.filteredLawOffices = this.lawOffices;
-      },
-      (error: any) => {
-        this.errorMessage = this.extractErrorMessage(error);
-        this.showPopup = true;
-        setTimeout(() => this.showPopup = false, 3000);
+  async onSubmit(): Promise<void> {
+    const saved = await submit(this.lawFirmForm, async () => {
+      try {
+        await this.persist();
+      } catch (error) {
+        this.showError(this.extractErrorMessage(error));
       }
-    );
-   
+    });
+    if (!saved) {
+      this.showValidationMessage();
+    }
   }
 
- private extractErrorMessage(error: any): string {
-  if (error.error && error.error.message) {
-    if (Array.isArray(error.error.message)) {
-      return error.error.message.join(', ');
+  onToggleChange(event: MatSlideToggleChange): void {
+    this.lawFirmForm.active_in().value.set(event.checked ? 'Y' : 'N');
+  }
+
+  onFilterInput(event: Event): void {
+    this.filterQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  confirmAndDeleteLawOffice(lawOfficeId: number): void {
+    this.openWarningDialog('Are you sure you want to delete this law office?', lawOfficeId);
+  }
+
+  private async persist(): Promise<void> {
+    const lawOfficeData = {
+      ...this.lawFirmModel(),
+      updated_by: sessionStorage.getItem('userId'),
+    };
+
+    if (this.isEditMode()) {
+      await firstValueFrom(this.lawFirmService.updateLawFirm(lawOfficeData));
+      this.showSuccess('Law Office updated successfully!');
+      this.isEditMode.set(true);
     } else {
+      await firstValueFrom(this.lawFirmService.insertLawFirm({
+        ...lawOfficeData,
+        entity_id: Number(sessionStorage.getItem('companyId')),
+        lw_id: 0,
+      }));
+      this.showSuccess('Law Office added successfully!');
+      this.isEditMode.set(true);
+      this.selectedLawOffice.set(null);
+      this.lawFirmForm().reset(blankLawFirm());
+    }
+    this.refreshData();
+  }
+
+  private refreshData(): void {
+    this.filterQuery.set('');
+    if (this.listOfficeId() === 0) {
+      this.lawFirmsResource.reload();
+      return;
+    }
+    this.listOfficeId.set(0);
+  }
+
+  private openWarningDialog(message: string, lawOfficeId: number): void {
+    const dialogRef = this.dialog.open(WarningModalComponent, {
+      data: { message }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.deleteLawOffice(lawOfficeId);
+      }
+    });
+  }
+
+  private deleteLawOffice(lawOfficeId: number): void {
+    this.lawFirmService.deleteLawFirm(lawOfficeId).subscribe({
+      next: () => {
+        this.showSuccess('Law Office deleted successfully!');
+        this.isEditMode.set(true);
+        this.selectedLawOffice.set(null);
+        this.lawFirmForm().reset(blankLawFirm());
+        this.refreshData();
+      },
+      error: (error: unknown) => {
+        console.error('Error deleting law office:', error);
+        this.showError(this.extractErrorMessage(error));
+      }
+    });
+  }
+
+  private showValidationMessage(): void {
+    const otherInvalid = [
+      this.lawFirmForm.lw_nm(),
+      this.lawFirmForm.lw_address_tx(),
+      this.lawFirmForm.lw_city(),
+      this.lawFirmForm.lw_state(),
+      this.lawFirmForm.lw_zip_cd(),
+      this.lawFirmForm.lw_email(),
+    ].some(field => field.invalid());
+    const phoneMessage = this.lawFirmForm.lw_phone().errors()[0]?.message;
+    this.showError(!otherInvalid && phoneMessage ? phoneMessage : 'Please complete the form');
+  }
+
+  private showError(message: string): void {
+    this.errorMessage.set(message);
+    this.showPopup.set(true);
+    setTimeout(() => this.showPopup.set(false), 5000);
+  }
+
+  private showSuccess(message: string): void {
+    this.successMessage.set(message);
+    this.showSuccessPopup.set(true);
+    setTimeout(() => this.showSuccessPopup.set(false), 3000);
+  }
+
+  private extractErrorMessage(error: any): string {
+    if (error?.error?.message) {
+      if (Array.isArray(error.error.message)) {
+        return error.error.message.join(', ');
+      }
       return error.error.message;
     }
+    return 'An unexpected error occurred';
   }
-  return 'An unexpected error occurred';
-}
-
-refreshData() {
-  this.lawFirmService.getLawOffices().then(
-    (data: LawFirm[]) => {
-      console.log('Law Office:', data); 
-       this.lawOffices = data.sort((a, b) => 
-        a.lw_nm.toLowerCase().localeCompare(b.lw_nm.toLowerCase())
-      );
-      this.filteredLawOffices = this.lawOffices;
-      this.initializeLawOfficeForm();
-      this.filterQuery = ''
-    },
-    (error: any) => {
-      console.error('Error fetching law offices:', error);
-    }
-  );
-}
-
-
-
-deleteLawOffice(lawOfficeId: number): void {
-  this.lawFirmService.deleteLawFirm(lawOfficeId).subscribe(
-    () => {
-      console.log('Law Office deleted successfully');
-      this.successMessage = 'Law Office deleted successfully!';
-      this.refreshData(); // Refresh the list of law offices
-      this.setEditMode(null as any);
-      this.successMessage = 'Law Office deleted successfully!';
-      this.showSuccessPopup = true; 
-      setTimeout(() => this.showSuccessPopup = false, 3000);
-    },
-    (error: any) => {
-      console.error('Error deleting law office:', error);
-      this.errorMessage = this.extractErrorMessage(error);
-      this.showPopup = true;
-      setTimeout(() => this.showPopup = false, 3000);
-    }
-  );
-}
-
-
-
-openWarningDialog(message: string, lawOfficeId: number): void {
-  const dialogRef = this.dialog.open(WarningModalComponent, {
-    data: { message: message }
-  });
-
-  dialogRef.afterClosed().subscribe(result => {
-    if (result) {
-      console.log('User confirmed the action');
-      this.deleteLawOffice(lawOfficeId); 
-    } else {
-      console.log('User canceled the action');
-      // Handle the cancellation action
-    }
-  });
-}
-
-
-confirmAndDeleteLawOffice(lawOfficeId: number): void {
-
-        this.openWarningDialog('Are you sure you want to delete this law office?', lawOfficeId);
-
-}
-
-toggleCheck() {
-  this.isIconChecked = !this.isIconChecked; 
-  console.log('Icon Checked:', this.isIconChecked); 
-  this.lawOfficeForm.get('active_in')?.setValue(this.isIconChecked ? 'Y' : 'N'); 
-}
-
-onToggleChange(event: MatSlideToggleChange) {
-  this.isActive = event.checked;
-  console.log('Toggle changed:', this.isActive ? 'Active' : 'Inactive');
-  this.lawOfficeForm.get('active_in')?.setValue(this.isActive ? 'Y' : 'N');
-}
-
-
-filterLawOffices() {
-  if (!this.filterQuery) {
-    this.filteredLawOffices = this.lawOffices;
-    return;
-  }
-  console.log('Filter Query:', this.filterQuery);
-  const query = this.filterQuery.toLowerCase();
-  this.filteredLawOffices = this.lawOffices.filter(lawOffice =>
-    lawOffice.lw_nm.toLowerCase().includes(query)
-  );
-}
-
-validatePhoneNumber(phone: string): boolean {
-  return this.phoneNumberService.isValidPhoneNumber(phone);
-}
-
-checkFormValidity(): void {
-  Object.keys(this.lawOfficeForm.controls).forEach(key => {
-    const control = this.lawOfficeForm.get(key);
-    if (control && control.invalid) {
-      console.log(`Control ${key} is invalid. Errors:`, control.errors);
-    }
-  });
-}
 }

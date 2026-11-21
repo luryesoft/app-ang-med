@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { PatientSearchService } from '../../services/patients.service';
 
@@ -10,9 +10,11 @@ export interface PatientSearchDialogData {
 }
 
 @Component({
-  selector: 'app-patient-search-dialog',
-  templateUrl: './patient-search-dialog.component.html',
-  styleUrls: ['./patient-search-dialog.component.scss']
+    selector: 'app-patient-search-dialog',
+    templateUrl: './patient-search-dialog.component.html',
+    styleUrls: ['./patient-search-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class PatientSearchDialogComponent implements OnInit {
   lastNm = '';

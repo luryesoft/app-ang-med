@@ -1,7 +1,8 @@
 import { Directive, HostListener } from '@angular/core';
 
 @Directive({
-  selector: 'input[dateMask]'
+    selector: 'input[dateMask]',
+    standalone: false
 })
 export class DateInputMaskDirective {
   @HostListener('keydown', ['$event'])

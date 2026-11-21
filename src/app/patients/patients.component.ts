@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, HostListener, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, HostListener, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { PatientSearchService } from '../services/patients.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
@@ -11,6 +11,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { GlobalService } from '../services/global.service';
+import { UserPreferenceService } from '../services/user-preference.service';
 import { MatExpansionPanel } from '@angular/material/expansion';
 import { PdfComponent } from '../pdfgen/pdfgen.component';
 import { Patient } from '../models/patient.model';
@@ -27,9 +28,11 @@ import { Observable, map, startWith } from 'rxjs';
 
 
 @Component({
-  selector: 'app-patients',
-  templateUrl: './patients.component.html',
-  styleUrls: ['./patients.component.scss']
+    selector: 'app-patients',
+    templateUrl: './patients.component.html',
+    styleUrls: ['./patients.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class PatientsComponent implements OnInit, AfterViewInit {
   @ViewChild('panel1') panel1!: MatExpansionPanel;
@@ -91,7 +94,8 @@ export class PatientsComponent implements OnInit, AfterViewInit {
     private dialog: MatDialog,
     private globalService: GlobalService,
     private cdr: ChangeDetectorRef,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private userPreferenceService: UserPreferenceService
     ) {
     this.patientForm = this.fb.group({
       entity_id: [''],
@@ -1147,15 +1151,7 @@ export class PatientsComponent implements OnInit, AfterViewInit {
       ptn_policyholder: this.patientForm.get('ptn_policyholder')?.value
     }).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const opened = window.open(url, '_blank');
-        if (!opened) {
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `NF-3-${this.formatDateForInput(svc.svc_date) || 'service'}.pdf`;
-          link.click();
-        }
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        void this.userPreferenceService.deliverPdf(blob, this.printFileName('NF3'));
       },
       error: (error) => {
         console.error('Error generating NF-3:', error);
@@ -1189,21 +1185,30 @@ export class PatientsComponent implements OnInit, AfterViewInit {
       ptn_date_of_accident: this.parseDateString(this.patientForm.get('ptn_date_of_accident')?.value)
     }).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const opened = window.open(url, '_blank');
-        if (!opened) {
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${form === 'aob' ? 'AOB' : 'AOB-delivery'}-${this.formatDateForInput(svc.svc_date) || 'service'}.pdf`;
-          link.click();
-        }
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        void this.userPreferenceService.deliverPdf(
+          blob,
+          this.printFileName(form === 'aob' ? 'AOB' : 'DELIVERY')
+        );
       },
       error: (error) => {
         console.error(`Error generating ${label}:`, error);
         this.showError(`Could not generate ${label}`);
       }
     });
+  }
+
+  private printFileName(fileType: 'NF3' | 'AOB' | 'DELIVERY'): string {
+    const last = this.safeFilePart(this.patientForm.get('ptn_last_nm')?.value);
+    const first = this.safeFilePart(this.patientForm.get('ptn_first_nm')?.value);
+    const id = String(this.selectedOption?.ptn_id || this.patientForm.get('ptn_id')?.value || 'id').trim();
+    return [last, first, id, fileType].filter(Boolean).join('_') + '.pdf';
+  }
+
+  private safeFilePart(value: unknown): string {
+    return String(value ?? '')
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, '')
+      .replace(/\s+/g, '');
   }
 
   formatDateToMMDDYYYY(dateString: string): string {

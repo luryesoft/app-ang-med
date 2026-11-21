@@ -1,20 +1,22 @@
-import { Component , OnInit} from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { GlobalService } from '../services/global.service';
 import { MatMenu } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component';
 import { SharedDataService } from '../services/shared-data.service';  
 import { AuthService } from '../auth/auth.service';
+import { UserPreferenceService } from '../services/user-preference.service';
 
 interface SecMenuItem {
   object_id: number;
   access_in: string;
 }
 @Component({
-  selector: 'app-layout',
- 
-  templateUrl: './layout.component.html',
-  styleUrl: './layout.component.scss'
+    selector: 'app-layout',
+    templateUrl: './layout.component.html',
+    styleUrl: './layout.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 
   export class LayoutComponent implements OnInit {
@@ -45,7 +47,8 @@ interface SecMenuItem {
     constructor(private globalService: GlobalService,
       private dialog: MatDialog,
       private sharedDataService: SharedDataService,
-      private authService: AuthService
+      private authService: AuthService,
+      private userPreferenceService: UserPreferenceService
     ) {}
   
     ngOnInit(): void {
@@ -107,6 +110,7 @@ interface SecMenuItem {
     }
       logout(): void {
         localStorage.removeItem('businessEntityName');
+        this.userPreferenceService.clearTheme();
         this.authService.logout();
     }
   }

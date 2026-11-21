@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 export interface ServiceCptAssignedLine {
@@ -15,7 +15,9 @@ export interface ServiceCptDialogData {
 @Component({
     selector: 'app-service-cpt-dialog',
     templateUrl: './service-cpt-dialog.component.html',
-    styleUrls: ['./service-cpt-dialog.component.scss']
+    styleUrls: ['./service-cpt-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class ServiceCptDialogComponent implements OnInit {
   filterQuery = '';

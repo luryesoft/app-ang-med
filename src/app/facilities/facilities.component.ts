@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation  } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FacilityService } from '../services/facility.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -35,6 +35,7 @@ interface FacilityType {
   standalone: false,
   templateUrl: './facilities.component.html',
   styleUrls: ['./facilities.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None
 })
 

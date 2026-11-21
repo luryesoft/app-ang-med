@@ -48,7 +48,7 @@
           <mat-panel-title>Patient Information: {{ selectedOption?.ptn_first_nm }} {{ selectedOption?.ptn_last_nm }} 
           <span class="span-ptn_id" *ngIf="selectedOption?.ptn_id">(ID: {{ selectedOption.ptn_id }})</span></mat-panel-title>
           <mat-panel-description *ngIf="selectedOption?.ptn_date_of_birth">
-            <span class="ptn_details_hdr">DOB:</span>{{ selectedOption?.ptn_date_of_birth  | date:'YYYY-MM-dd' }}
+            <span class="ptn_details_hdr">DOB:</span>{{ $safeNavigationMigration(selectedOption?.ptn_date_of_birth)  | date:'YYYY-MM-dd' }}
             <span class="ptn_details_hdr">Address:</span> {{ selectedOption?.ptn_address }}  
             ,&nbsp; {{ selectedOption?.ptn_city }}
             &nbsp;{{ selectedOption?.ptn_state }}
@@ -312,7 +312,7 @@
           <span><label>Insurance</label>{{ selectedInsuranceName }}</span>
           <span><label>Lawyer</label>{{ selectedLawyerName }}</span>
           <span><label>Provider</label>{{ companyName }}</span>
-          <span><label>Accident</label>{{ formatDateForInput(patientForm.get('ptn_date_of_accident')?.value) || '—' }}</span>
+          <span><label>Accident</label>{{ formatDateForInput($safeNavigationMigration(patientForm.get('ptn_date_of_accident')?.value)) || '—' }}</span>
           <span><label>Policy #</label>{{ patientForm.get('ptn_policy_no')?.value || '—' }}</span>
           <span><label>Claim #</label>{{ patientForm.get('ptn_claim_no')?.value || '—' }}</span>
           <span><label>Policyholder</label>{{ patientForm.get('ptn_policyholder')?.value || '—' }}</span>

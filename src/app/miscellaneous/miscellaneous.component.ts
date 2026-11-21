@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewChild, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 import { MiscellaneousService } from '../services/miscellaneous.service';
 import { GlobalService } from '../services/global.service';
 import { MatTableDataSource } from '@angular/material/table';
@@ -16,6 +16,7 @@ import { parseMoney } from '../pipes/numeric-only.directive';
   standalone: false,
   templateUrl: './miscellaneous.component.html',
   styleUrls: ['./miscellaneous.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None
 })
 

@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 export interface ServiceIcdDialogData {
@@ -7,9 +7,11 @@ export interface ServiceIcdDialogData {
 }
 
 @Component({
-  selector: 'app-service-icd-dialog',
-  templateUrl: './service-icd-dialog.component.html',
-  styleUrls: ['./service-icd-dialog.component.scss']
+    selector: 'app-service-icd-dialog',
+    templateUrl: './service-icd-dialog.component.html',
+    styleUrls: ['./service-icd-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class ServiceIcdDialogComponent implements OnInit {
   filterQuery = '';

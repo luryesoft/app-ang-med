@@ -1,0 +1,149 @@
+.preferences {
+  padding: 10px 12px 12px;
+}
+
+.preferences-hdr {
+  margin-bottom: 8px;
+}
+
+.preferences-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.preferences-loading {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.pref-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.pref-hdr {
+  background: #f5f5f5;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e0e0e0;
+  font-weight: 600;
+  color: #333;
+}
+
+.pref-body {
+  padding: 10px;
+}
+
+.pref-label {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.pref-folder {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pref-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pref-folder-value {
+  flex: 1;
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: #fafafa;
+  font-size: 12px;
+  font-weight: 600;
+  color: #222;
+  word-break: break-word;
+}
+
+.pref-browse {
+  height: 26px;
+  min-width: 54px;
+  padding: 0 8px;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  background: #fff;
+  color: #444;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.pref-browse:hover:not(:disabled) {
+  background: #f3f3f3;
+}
+
+.pref-browse:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pref-folder-clear {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #666;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.pref-folder-clear:hover:not(:disabled) {
+  color: #333;
+  text-decoration: underline;
+}
+
+.pref-folder-clear:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pref-seg {
+  display: flex;
+  width: 100%;
+  height: 24px;
+  border: 1px solid #d4d4d4;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f4f4f4;
+}
+
+.pref-seg-btn {
+  flex: 1;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: #555;
+  font-size: 11px;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.pref-seg-btn + .pref-seg-btn {
+  border-left: 1px solid #d4d4d4;
+}
+
+.pref-seg-btn:hover:not(.active) {
+  background: #ececec;
+}
+
+.pref-seg-btn.active {
+  background: #5c6bc0;
+  color: #fff;
+}
+
+.pref-seg-btn.active + .pref-seg-btn {
+  border-left-color: #5c6bc0;
+}

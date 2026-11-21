@@ -73,11 +73,27 @@ $mat-badge-large-size: $mat-badge-default-size + 6;
   
   }
 
-  .logout-icon {
+  .header-actions {
     position: absolute;
-    right: 0;
-    margin-right:80px;
+    right: 12px;
+    top: 0;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 50;
+  }
+
+  .pref-initials {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    box-shadow: none;
+  }
+
+  .logout-icon {
     color: #fff;
+    cursor: pointer;
   }
 
   .layout_menu_button{

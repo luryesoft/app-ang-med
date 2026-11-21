@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { IcdCodeDto } from '../../models/icd-codes-dto'; 
 import { MiscellaneousService } from '../../services/miscellaneous.service';
@@ -7,9 +7,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { GlobalService } from '../../services/global.service';
 
 @Component({
-  selector: 'app-icd-code-dialog',
-  templateUrl: './icd-code-dialog.component.html',
-  styleUrls: ['./icd-code-dialog.component.scss']
+    selector: 'app-icd-code-dialog',
+    templateUrl: './icd-code-dialog.component.html',
+    styleUrls: ['./icd-code-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 export class IcdCodeDialogComponent {
 

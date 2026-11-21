@@ -4,64 +4,75 @@
       placeholder="Filter by CPT code, description, or modifier"
       [(ngModel)]="filterQuery"
       (input)="applyFilter()">
-    <button mat-icon-button *ngIf="filterQuery" (click)="clearFilter()">
-      <mat-icon class="clear-icon">cancel</mat-icon>
-    </button>
-    <h1 mat-dialog-title>Company CPT Codes</h1>
-    <mat-button-toggle-group
-      [(value)]="toggleState"
-      (change)="toggleFilter($event.value)"
-      [hideSingleSelectionIndicator]="hideSingleSelectionIndicator()"
-      name="filterOptions"
-      aria-label="Filter Options">
-      <mat-button-toggle value="all">All</mat-button-toggle>
-      <mat-button-toggle value="selected">Selected</mat-button-toggle>
-    </mat-button-toggle-group>
-  </div>
+      @if (filterQuery) {
+        <button mat-icon-button (click)="clearFilter()">
+          <mat-icon class="clear-icon">cancel</mat-icon>
+        </button>
+      }
+      <h1 mat-dialog-title>Company CPT Codes</h1>
+      <mat-button-toggle-group
+        [(value)]="toggleState"
+        (change)="toggleFilter($event.value)"
+        [hideSingleSelectionIndicator]="hideSingleSelectionIndicator()"
+        name="filterOptions"
+        aria-label="Filter Options">
+        <mat-button-toggle value="all">All</mat-button-toggle>
+        <mat-button-toggle value="selected">Selected</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
 
-  <div class="scrollable-content">
-    <div *ngIf="filteredCptCodes.length === 0" class="empty-hint">
-      No CPT codes assigned to this company.
-    </div>
-    <div class="cpt-list-header" *ngIf="filteredCptCodes.length > 0">
-      <span class="col-code">CPT</span>
-      <span class="col-desc">Description</span>
-      <span class="col-mod">Mod</span>
-      <span class="col-charge">Charge</span>
-      <span class="col-check"></span>
-    </div>
-    <mat-list>
-      <mat-list-item
-        *ngFor="let cptCode of filteredCptCodes"
+    <div class="scrollable-content">
+      @if (filteredCptCodes.length === 0) {
+        <div class="empty-hint">
+          No CPT codes assigned to this company.
+        </div>
+      }
+      @if (filteredCptCodes.length > 0) {
+        <div class="cpt-list-header">
+          <span class="col-code">CPT</span>
+          <span class="col-desc">Description</span>
+          <span class="col-mod">Mod</span>
+          <span class="col-charge">Charge</span>
+          <span class="col-check"></span>
+        </div>
+      }
+      <mat-list>
+        @for (cptCode of filteredCptCodes; track cptCode) {
+          <mat-list-item
         [ngClass]="{
           'selected-row': isSelected(cptCode),
           'assigned-row': isAssigned(cptCode)
         }"
-        (click)="toggleSelection(cptCode)">
-        <div class="list-item-content">
-          <span class="col-code">{{ cptCode.cpt_code }}</span>
-          <span class="col-desc">
-            {{ cptCode.cpt_code_short_nm || cptCode.cpt_code_description }}
-            <small class="already-assigned" *ngIf="isAssigned(cptCode)">Already on service</small>
-          </span>
-          <span class="col-mod">{{ modifierLabel(cptCode) }}</span>
-          <span class="col-charge">{{ (cptCode.cpt_code_charge_am ?? 0) | currency:'USD':'symbol':'1.2-2' }}</span>
-          <mat-checkbox class="checkbox-style col-check"
-            [checked]="isSelected(cptCode)"
-            [disabled]="isAssigned(cptCode)"
-            (click)="toggleSelection(cptCode, $event)">
-          </mat-checkbox>
-        </div>
-      </mat-list-item>
-    </mat-list>
+            (click)="toggleSelection(cptCode)">
+            <div class="list-item-content">
+              <span class="col-code">{{ cptCode.cpt_code }}</span>
+              <span class="col-desc">
+                {{ cptCode.cpt_code_short_nm || cptCode.cpt_code_description }}
+                @if (isAssigned(cptCode)) {
+                  <small class="already-assigned">Already on service</small>
+                }
+              </span>
+              <span class="col-mod">{{ modifierLabel(cptCode) }}</span>
+              <span class="col-charge">{{ (cptCode.cpt_code_charge_am ?? 0) | currency:'USD':'symbol':'1.2-2' }}</span>
+              <mat-checkbox class="checkbox-style col-check"
+                [checked]="isSelected(cptCode)"
+                [disabled]="isAssigned(cptCode)"
+                (click)="toggleSelection(cptCode, $event)">
+              </mat-checkbox>
+            </div>
+          </mat-list-item>
+        }
+      </mat-list>
+    </div>
   </div>
-</div>
 
-<div mat-dialog-actions class="dialog-actions">
-  <button mat-button class="cancel-button" type="button" (click)="dialogRef.close()">Cancel</button>
-  <button mat-button class="confirm-button" type="button" (click)="save()">Save</button>
-</div>
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-button class="cancel-button" type="button" (click)="dialogRef.close()">Cancel</button>
+    <button mat-button class="confirm-button" type="button" (click)="save()">Save</button>
+  </div>
 
-<div *ngIf="errorMessage" class="error-popup">
-  {{ errorMessage }}
-</div>
+  @if (errorMessage) {
+    <div class="error-popup">
+      {{ errorMessage }}
+    </div>
+  }

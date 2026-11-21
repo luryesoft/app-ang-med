@@ -1,4 +1,4 @@
-import { Component, OnInit} from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, NgForm, ValidationErrors, Validators } from '@angular/forms';
 import { ProviderService } from '../services/providers.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -72,9 +72,11 @@ interface Facility {
 
 
 @Component({
-  selector: 'app-providers',
-  templateUrl: './providers.component.html',
-  styleUrls: ['./providers.component.scss']
+    selector: 'app-providers',
+    templateUrl: './providers.component.html',
+    styleUrls: ['./providers.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 
 

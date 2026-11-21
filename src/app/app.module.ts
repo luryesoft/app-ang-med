@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormField } from '@angular/forms/signals';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AppRoutingModule } from './app-routing.module';
@@ -9,7 +10,7 @@ import { UserloginComponent } from './userlogin/userlogin.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LayoutComponent } from './layout/layout.component';
 import { BusinessentityComponent } from './admin//businessentity/businessentity.component'; 
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,6 +52,7 @@ import { ServiceCptDialogComponent } from './patients/service-cpt-dialog/service
 import { ServiceIcdDialogComponent } from './patients/service-icd-dialog/service-icd-dialog.component';
 import { PatientSearchDialogComponent } from './patients/patient-search-dialog/patient-search-dialog.component';
 import { ReportsComponent } from './reports/reports.component';
+import { PreferencesComponent } from './preferences/preferences.component';
 import { SsnMaskPipe } from './pipes/ssn-mask.pipe';
 import { NumericOnlyDirective } from './pipes/numeric-only.directive';
 import { DateInputMaskDirective } from './pipes/date-input-mask.directive';
@@ -80,6 +82,7 @@ import { MmddyyyyDateAdapter } from './pipes/mmddyyyy-date-adapter';
     ServiceCptDialogComponent,
     ServiceIcdDialogComponent,
     PatientSearchDialogComponent,
+    PreferencesComponent,
     SsnMaskPipe,
     NumericOnlyDirective,
     DateInputMaskDirective,
@@ -91,6 +94,7 @@ import { MmddyyyyDateAdapter } from './pipes/mmddyyyy-date-adapter';
     BrowserModule,
     FormsModule,  
     ReactiveFormsModule,
+    FormField,
     MatCardModule,
     CommonModule,
     BrowserAnimationsModule,
@@ -125,7 +129,7 @@ import { MmddyyyyDateAdapter } from './pipes/mmddyyyy-date-adapter';
     NgxMaskDirective
   ],
   providers: [ 
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withXhr(), withInterceptorsFromDi()),
     CanDeactivateGuard,
     provideNgxMask(),
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },

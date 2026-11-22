@@ -5,16 +5,31 @@ $mat-badge-default-size: 22px !default;
 $mat-badge-small-size: $mat-badge-default-size - 6;
 $mat-badge-large-size: $mat-badge-default-size + 6;
 
+:host {
+  display: block;
+  height: 100%;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
 .header-container {
   display: flex;
     position: relative;
-    display: flex;
+    flex: 0 0 auto;
     background-color: #787ae3;
     height: 45px;
     width: 100%;
     border: 1px solid #7776c556;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
     align-items: center;
+    z-index: 30;
   }
 
   .mat-display-1 {
@@ -26,6 +41,7 @@ $mat-badge-large-size: $mat-badge-default-size + 6;
   }
   .menu-container {
     display: flex;
+    flex: 0 0 auto;
     background-color: var(--app-theme-primary);
     height: 40px;
     width: 100%;
@@ -33,6 +49,35 @@ $mat-badge-large-size: $mat-badge-default-size + 6;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
     align-items: center;
     margin-top: 1px;
+    z-index: 29;
+  }
+
+  .content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .sidenav-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    overflow: visible;
+    z-index: 40;
+    pointer-events: none;
+  }
+
+  .sidenav-container .mat-drawer,
+  .sidenav-container mat-sidenav {
+    pointer-events: auto;
+  }
+
+  .example-container {
+    flex: 0 0 0;
+    height: 0;
+    overflow: hidden;
   }
 
   .flat_menu_button {
@@ -94,6 +139,33 @@ $mat-badge-large-size: $mat-badge-default-size + 6;
   .logout-icon {
     color: #fff;
     cursor: pointer;
+  }
+
+  .patient-ribbon {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex: 1;
+    margin-left: 16px;
+    margin-right: 72px;
+    color: #fff;
+    font-size: 13px;
+    line-height: 40px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .patient-ribbon-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .patient-ribbon-id,
+  .patient-ribbon-label {
+    margin-right: 4px;
+    opacity: 0.9;
   }
 
   .layout_menu_button{

@@ -23,6 +23,7 @@ export interface ServicePayment {
 export interface PatientService {
   svc_id: number;
   svc_date: string;
+  billing_date: string;
   facility_id: number | null;
   provider_id: number | null;
   facility_nm?: string;

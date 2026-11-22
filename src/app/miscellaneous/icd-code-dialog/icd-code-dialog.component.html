@@ -1,11 +1,14 @@
 <div class="container">
   <div class="filter-input-container">
     <input class="filter-input" type="text"
-      placeholder="Type ICD code or Description (4 or more characters) and press Enter"
+      placeholder="Code or description, at least 4 characters"
       [(ngModel)]="filterQuery"
       (keydown)="onKeydown($event)">
 
-      <button mat-icon-button matSuffix  (click)="clearSearch()">
+      <button mat-icon-button type="button" aria-label="Search catalog" (click)="applySearch()">
+        <mat-icon>search</mat-icon>
+      </button>
+      <button mat-icon-button type="button" matSuffix (click)="clearSearch()">
         <mat-icon class="clear-icon">cancel</mat-icon>
       </button>
       @if (isLoading) {
@@ -27,15 +30,30 @@
 
     <div mat-dialog-content class="scrollable-content">
 
-      @if (!isLoading) {
+      @if (!isLoading && !filteredIcdCodes.length) {
+        <p class="catalog-empty">
+          @if (shortQuery) {
+            Type at least 4 characters.
+          } @else if (searched) {
+            No matching ICD codes.
+          } @else {
+            Search by code or description. A decimal in the code is optional.
+          }
+        </p>
+      }
+      @if (!isLoading && filteredIcdCodes.length) {
         <mat-list>
           @for (icdCode of filteredIcdCodes; track icdCode) {
-            <mat-list-item >
+            <mat-list-item (click)="onCatalogRow(icdCode)">
               <div class="list-item-content">
                 {{ icdCode.icd_code }} - <small>{{ icdCode.icd_code_description }}</small>
+                @if (isAssigned(icdCode.icd_code)) {
+                  <small class="assigned-note">Already assigned</small>
+                }
                 <mat-checkbox class="checkbox-style"
                   [checked]="selectedIcdCodes.has(icdCode.icd_code)"
-                  (change)="toggleSelection(icdCode.icd_code)">
+                  [disabled]="isAssigned(icdCode.icd_code)"
+                  (click)="$event.stopPropagation(); onCatalogRow(icdCode)">
                 </mat-checkbox>
               </div>
             </mat-list-item>
@@ -47,7 +65,7 @@
 
   <div mat-dialog-actions class="dialog-actions">
     <button mat-button class="cancel-button"  (click)="dialogRef.close()">Cancel</button>
-    <button mat-button class="confirm-button" (click)="openWarningDialog('Are you sure you want to copy the selected CPT codes?')">Confirm</button>
+    <button mat-button class="confirm-button" (click)="confirmCopy()">Confirm</button>
   </div>
 
   @if (showPopup) {

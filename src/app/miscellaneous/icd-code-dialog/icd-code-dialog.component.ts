@@ -1,6 +1,8 @@
 import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { IcdCodeDto } from '../../models/icd-codes-dto'; 
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { IcdCodeDto } from '../../models/icd-codes-dto';
 import { MiscellaneousService } from '../../services/miscellaneous.service';
 import { WarningModalComponent } from '../../warning-modal/warning-modal.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -28,6 +30,8 @@ export class IcdCodeDialogComponent {
   type: string = 'D';
   search: string = '';
   isLoading: boolean = false;
+  searched = false;
+  shortQuery = false;
   //toggleSingleSelectionIndicator: boolean = false;
   toggleState: string = 'all';
 
@@ -40,10 +44,55 @@ export class IcdCodeDialogComponent {
     private globalService: GlobalService,
   ) {}
 
-  ngOnInit(): void {
+  private assignedCodes = new Set<string>();
 
+  ngOnInit(): void {
     this.entityId = this.globalService.getCompanyId();
     this.userId = this.globalService.getUserId();
+    this.assignedCodes = new Set(
+      (this.data?.assignedCodes ?? []).map((code: string) => String(code ?? '').trim().toUpperCase())
+    );
+  }
+
+  isAssigned(icdCode: string): boolean {
+    return this.assignedCodes.has(String(icdCode ?? '').trim().toUpperCase());
+  }
+
+  onCatalogRow(row: IcdCodeDto): void {
+    if (this.isAssigned(row.icd_code)) {
+      this.showAssignedMessage(row.icd_code);
+      return;
+    }
+    this.toggleSelection(row.icd_code);
+  }
+
+  confirmCopy(): void {
+    if (!this.selectedIcdCodes.size) {
+      this.errorMessage = 'Select an ICD code.';
+      this.showPopup = true;
+      setTimeout(() => this.showPopup = false, 4000);
+      return;
+    }
+    const alreadyAssigned = Array.from(this.selectedIcdCodes).filter(code => this.isAssigned(code));
+    if (alreadyAssigned.length) {
+      const listed = alreadyAssigned.join(', ');
+      this.errorMessage = alreadyAssigned.length === 1
+        ? `${listed} is already assigned to this company.`
+        : `${listed} are already assigned to this company.`;
+      this.showPopup = true;
+      setTimeout(() => this.showPopup = false, 4000);
+      return;
+    }
+    this.openWarningDialog('Are you sure you want to copy the selected ICD codes?');
+  }
+
+  private showAssignedMessage(icdCode: string): void {
+    if (!icdCode) {
+      return;
+    }
+    this.errorMessage = `${icdCode} is already assigned to this company.`;
+    this.showPopup = true;
+    setTimeout(() => this.showPopup = false, 4000);
   }
 
   onClose(): void {
@@ -83,10 +132,9 @@ export class IcdCodeDialogComponent {
             setTimeout(() => this.showSuccessPopup = false, 3000);
             this.closeDialog(true);
           } else {
-            this.errorMessage = 'Error copying ICD code(s):: '+response.returntx;
+            this.errorMessage = response.returntx || 'That ICD code is already assigned to this company.';
             this.showPopup = true;
-            setTimeout(() => this.showPopup = false, 3000);
-            this.closeDialog(false);
+            setTimeout(() => this.showPopup = false, 4000);
           }
       },
       (error) => {
@@ -104,32 +152,47 @@ export class IcdCodeDialogComponent {
 
   applySearch(): void {
     const query = this.filterQuery.trim();
-    this.type = 'D';
-    if (query.length >= 4) {
-      if (/\d/.test(query.charAt(1))) {
-        this.type = 'C'; // Return 'D' if the second character is numeric
-      }
-
-      this.search = query;
-      console.log(this.type);
-      console.log(this.search);
-      this.isLoading = true;
-      this.miscellaneousService.getSearchIcdCodes(this.type, this.search).subscribe(
-        (data: IcdCodeDto[]) => {
-          this.icdCodes = data;
-          this.filteredIcdCodes = data;
-            console.log('ICD Codes:',this.icdCodes);
-          this.isLoading = false;
-        },
-        error => {
-          console.error('Error fetching ICD codes:', error);
-          this.errorMessage = 'Failed to fetch ICD codes.';
-          this.showPopup = true;
-          this.isLoading = false;
-        }
-      );
+    if (query.length < 4) {
+      this.shortQuery = true;
+      this.searched = false;
+      this.icdCodes = [];
+      this.filteredIcdCodes = [];
+      return;
     }
-  
+
+    // Catalog codes are stored without a decimal, so E78.01 is searched as E7801.
+    const codeQuery = query.replace(/[.\s-]/g, '');
+    this.search = query;
+    this.shortQuery = false;
+    this.isLoading = true;
+    this.searched = true;
+
+    const searchType = (type: string, term: string) =>
+      this.miscellaneousService.getSearchIcdCodes(type, term).pipe(
+        catchError(() => of([] as IcdCodeDto[]))
+      );
+
+    forkJoin({
+      codes: searchType('C', codeQuery),
+      descriptions: searchType('D', query)
+    }).subscribe({
+      next: ({ codes, descriptions }) => {
+        const merged = new Map<string, IcdCodeDto>();
+        for (const row of [...codes, ...descriptions]) {
+          if (row?.icd_code) {
+            merged.set(row.icd_code, row);
+          }
+        }
+        this.icdCodes = Array.from(merged.values());
+        this.applyFilter();
+        this.isLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Failed to fetch ICD codes.';
+        this.showPopup = true;
+        this.isLoading = false;
+      }
+    });
   }
 
   clearSearch(): void {
@@ -140,6 +203,10 @@ export class IcdCodeDialogComponent {
 
 
   toggleSelection(icdCode: string): void {
+    if (this.isAssigned(icdCode)) {
+      this.showAssignedMessage(icdCode);
+      return;
+    }
     if (this.selectedIcdCodes.has(icdCode)) {
       this.selectedIcdCodes.delete(icdCode);
     } else {

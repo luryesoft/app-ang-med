@@ -165,6 +165,7 @@ export class PatientSearchService {
       services: services.map((svc) => ({
         svc_id: svc.svc_id,
         svc_date: this.toApiDate(svc.svc_date),
+        billing_date: this.toApiDate(svc.billing_date),
         facility_id: svc.facility_id,
         provider_id: svc.provider_id,
         status: svc.status,

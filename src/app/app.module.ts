@@ -46,6 +46,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { CptCodeDialogComponent } from './cpt-code-dialog/cpt-code-dialog.component'; 
 import { IcdCodeDialogComponent } from './miscellaneous/icd-code-dialog/icd-code-dialog.component';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PatientsComponent } from './patients/patients.component';
 import { ServiceCptDialogComponent } from './patients/service-cpt-dialog/service-cpt-dialog.component';
@@ -123,6 +124,7 @@ import { MmddyyyyDateAdapter } from './pipes/mmddyyyy-date-adapter';
     MatSortModule,
     MatDialogModule,
     MatButtonToggleModule,
+    MatTabsModule,
     MatProgressSpinnerModule,
     MatDatepickerModule,
     MatNativeDateModule,

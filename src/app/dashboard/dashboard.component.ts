@@ -29,7 +29,7 @@ export class DashboardComponent implements OnInit {
     { key: 'outstanding', title: 'Outstanding', hint: 'Unbilled more than 30 days' },
     { key: 'billedPartial', title: 'Billed / Partial', hint: 'Balance remaining' },
     { key: 'denied', title: 'Denied', hint: 'Needs follow-up' },
-    { key: 'incomplete', title: 'Incomplete', hint: 'Missing office, provider, CPT, or ICD' }
+    { key: 'incomplete', title: 'Incomplete', hint: 'Missing office, provider, insurance, policy, claim, CPT, or ICD' }
   ];
 
   constructor(

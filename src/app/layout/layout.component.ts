@@ -3,7 +3,7 @@ import { GlobalService } from '../services/global.service';
 import { MatMenu } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { LogoutDialogComponent } from '../logout-dialog/logout-dialog.component';
-import { SharedDataService } from '../services/shared-data.service';  
+import { PatientRibbonInfo, SharedDataService } from '../services/shared-data.service';  
 import { AuthService } from '../auth/auth.service';
 import { UserPreferenceService } from '../services/user-preference.service';
 
@@ -30,6 +30,7 @@ interface SecMenuItem {
     menu: MatMenu = {} as MatMenu;
     isSidenavOpen = false;
     secMenu: { [key: number]: string } = {};
+    patientRibbon: PatientRibbonInfo | null = null;
     onActivate(event: any) {
       if (event && event.companyNameChange) {
         event.companyNameChange.subscribe((name: string) => {
@@ -60,6 +61,10 @@ interface SecMenuItem {
       this.businessEntityName = this.globalService.getBusinessEntityName();
        //security menu
        this.fetchSecMenuProfile();
+
+    this.sharedDataService.patientRibbon$.subscribe(info => {
+      this.patientRibbon = info;
+    });
 
     this.sharedDataService.businessEntityName$.subscribe(name => {
       if (name) { 

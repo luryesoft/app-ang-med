@@ -5,5 +5,8 @@ export interface User {
     user_last_name_tx: string,
     user_email_tx: string,
     company_id: number,
-    sec_profile_id: number
+    sec_profile_id: number,
+    theme?: 'light' | 'dark',
+    pdf_action?: 'open' | 'save',
+    pdf_folder_nm?: string | null
   }

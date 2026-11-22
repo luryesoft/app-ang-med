@@ -1,14 +1,15 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'ssnMask'
+    name: 'ssnMask',
+    standalone: false
 })
 export class SsnMaskPipe implements PipeTransform {
   transform(ssn: string): string {
-    if (!ssn || ssn.length < 4) {
-      return ssn; // Return as is if SSN is invalid
+    const digits = String(ssn || '').replace(/\D/g, '');
+    if (digits.length < 4) {
+      return '';
     }
-    const lastFourDigits = ssn.slice(-4);
-    return `***-**-${lastFourDigits}`;
+    return `***-**-${digits.slice(-4)}`;
   }
 }

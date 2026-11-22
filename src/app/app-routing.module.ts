@@ -13,6 +13,7 @@ import { InsuranceComponent } from './insurance/insurance.component';
 import { PatientsComponent } from './patients/patients.component';
 import { ReportsComponent } from './reports/reports.component';
 import { AuthGuard } from './auth/auth.guard';
+import { CanDeactivateGuard } from './guards/can-deactivate.guard';
 
 
 
@@ -29,7 +30,7 @@ const routes: Routes = [
       { path: 'miscellaneous', component: MiscellaneousComponent , canActivate: [AuthGuard]},
       { path: 'law_firm', component: LawFirmComponent , canActivate: [AuthGuard]},
       { path: 'insurance', component: InsuranceComponent , canActivate: [AuthGuard]},
-      { path: 'patients', component: PatientsComponent , canActivate: [AuthGuard]},
+      { path: 'patients', component: PatientsComponent , canActivate: [AuthGuard], canDeactivate: [CanDeactivateGuard]},
       { path: 'reports', component: ReportsComponent , canActivate: [AuthGuard]},
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' } 
     ]

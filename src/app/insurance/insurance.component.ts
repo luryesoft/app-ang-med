@@ -1,4 +1,4 @@
-import { Component, OnInit, Provider, ViewEncapsulation  } from '@angular/core';
+import { Component, OnInit, Provider, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InsuranceService } from '../services/insurance.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -31,6 +31,7 @@ export interface Insurance {
   selector: 'app-insurance',
   standalone: false,
   templateUrl: './insurance.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './insurance.component.scss'
 })
 

@@ -23,10 +23,13 @@ export interface ServicePayment {
 export interface PatientService {
   svc_id: number;
   svc_date: string;
-  provider_nm: string;
+  billing_date: string;
+  facility_id: number | null;
+  provider_id: number | null;
+  facility_nm?: string;
+  provider_nm?: string;
   status: ServiceStatus;
   notes: string;
-  diagnoses: DiagnosisCode[];
   lines: ServiceLine[];
   payments: ServicePayment[];
 }

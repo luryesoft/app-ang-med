@@ -51,11 +51,71 @@
   opacity: 0.65;
 }
 
+.cpt-list-header,
 .list-item-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   width: 100%;
+  gap: 8px;
+}
+
+.cpt-list-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  padding: 0 16px 8px;
+  border-bottom: 1px solid #ececf1;
+  margin-bottom: 4px;
+}
+
+.list-item-content {
+  align-items: flex-start;
+  white-space: normal;
+}
+
+.col-code {
+  flex: 0 0 72px;
+  font-weight: 600;
+}
+
+.col-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 8px;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.col-mod {
+  flex: 0 0 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-charge {
+  flex: 0 0 88px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-check {
+  flex: 0 0 40px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+:host ::ng-deep .mat-mdc-list-item,
+:host ::ng-deep .mat-list-item {
+  height: auto !important;
+  align-items: flex-start;
+}
+
+:host ::ng-deep .mat-mdc-list-item .mdc-list-item__content,
+:host ::ng-deep .mat-list-item .mat-list-item-content {
+  height: auto !important;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  white-space: normal;
 }
 
 .checkbox-style {

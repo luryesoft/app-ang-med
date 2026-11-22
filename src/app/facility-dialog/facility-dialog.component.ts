@@ -1,13 +1,15 @@
 
-import { NgModule } from '@angular/core';
+import { NgModule, ChangeDetectionStrategy } from '@angular/core';
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FacilitiesDTO } from '../models/facilities-dto';
 
 @Component({
-  selector: 'app-facility-dialog',
-  templateUrl: './facility-dialog.component.html',
-  styleUrls: ['./facility-dialog.component.scss']
+    selector: 'app-facility-dialog',
+    templateUrl: './facility-dialog.component.html',
+    styleUrls: ['./facility-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 
 

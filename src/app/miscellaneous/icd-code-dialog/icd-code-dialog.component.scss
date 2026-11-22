@@ -25,6 +25,16 @@
     align-items: center; /* Vertically centers the content */
     padding: 8px; /* Optional: Add padding for better appearance */
   }
+  .catalog-empty {
+    margin: 8px 0;
+    color: #5f6368;
+  }
+
+  .assigned-note {
+    margin-left: 8px;
+    color: #c5221f;
+  }
+
   .scrollable-content {
       max-height: 78vh;
       overflow-y: auto; /* Enable vertical scrolling */
@@ -38,7 +48,7 @@
     .filter-input {
       flex-grow: 1; /* Allows the input to take up available space */
       width: 100px; /* Optional: Limit the maximum width of the input */
-      border: 1px solid blue($color: #000000);
+      border: 1px solid #000000;
       border-radius: 8px;
   
     }
@@ -85,9 +95,26 @@
   
   .list-item-content {
     display: flex;
-    justify-content: space-between; /* Distributes space between text and checkbox */
-    align-items: center; /* Vertically centers the content */
-    width: 100%; /* Ensures the flex container takes full width */
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    white-space: normal;
+    line-height: 1.35;
+    padding-right: 8px;
+  }
+
+  :host ::ng-deep .mat-mdc-list-item,
+  :host ::ng-deep .mat-list-item {
+    height: auto !important;
+    align-items: flex-start;
+  }
+
+  :host ::ng-deep .mat-mdc-list-item .mdc-list-item__content,
+  :host ::ng-deep .mat-list-item .mat-list-item-content {
+    height: auto !important;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    white-space: normal;
   }
   
   .checkbox-style {

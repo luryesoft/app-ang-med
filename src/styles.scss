@@ -6,15 +6,25 @@
 // Anchors for the indigo-pink prebuilt palette (primary indigo, accent pink)
 $med-theme-primary: #3f51b5;
 $med-theme-accent: #ff4081;
+$switch-active: #137333;
+$switch-active-track: #81c995;
+$switch-inactive: #c5221f;
+$switch-inactive-track: #f4b4b0;
 
 html, body {
   font-size: 16px;
-  height: 70%;
+  height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
   line-height: 1.2;
   background-color: #f0f0f0;
+}
+
+app-root {
+  display: block;
+  height: 100%;
 }
 
 .mat-display-1 {
@@ -22,11 +32,15 @@ html, body {
 }
 
 .error-popup {
-  margin-top: 5px;
+  margin-top: 0;
   position: fixed;
-  top: 1px;
-  right: -100px;
-  transform: translateX(-60%);
+  top: 12px;
+  right: 16px;
+  left: auto;
+  transform: none;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - 32px);
   background-color: #ff5100fa;
   color: white;
   padding: 15px;
@@ -36,11 +50,15 @@ html, body {
 }
 
 .popup-success {
-  margin-top: 5px;
+  margin-top: 0;
   position: fixed;
-  top: 1px;
-  right: -100px;
-  transform: translateX(-60%);
+  top: 12px;
+  right: 16px;
+  left: auto;
+  transform: none;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - 32px);
   background-color: #00ff807a;
   color: white;
   padding: 15px;
@@ -68,13 +86,40 @@ html, body {
     selected-focus-icon-color: $med-theme-accent,
     selected-icon-color: $med-theme-accent,
   ));
+}
+
+// Slide toggle defaults to accent, and that class sets its own colors on the
+// element. Those beat :root, so the status colors have to be set here.
+.mat-mdc-slide-toggle.mat-primary,
+.mat-mdc-slide-toggle.mat-accent,
+.mat-mdc-slide-toggle.mat-warn {
   @include mat.slide-toggle-overrides((
-    track-outline-color: rgba(0, 0, 0, 0.38),
-    unselected-focus-track-color: $med-theme-primary,
-    unselected-hover-track-color: $med-theme-primary,
-    unselected-track-color: #e0e0e0,
-    selected-focus-track-color: $med-theme-accent,
-    selected-track-color: $med-theme-accent,
+    selected-icon-color: white,
+    selected-handle-color: $switch-active,
+    selected-hover-handle-color: $switch-active,
+    selected-focus-handle-color: $switch-active,
+    selected-pressed-handle-color: $switch-active,
+    selected-hover-state-layer-color: $switch-active,
+    selected-focus-state-layer-color: $switch-active,
+    selected-pressed-state-layer-color: $switch-active,
+    selected-track-color: $switch-active-track,
+    selected-hover-track-color: $switch-active-track,
+    selected-focus-track-color: $switch-active-track,
+    selected-pressed-track-color: $switch-active-track,
+    selected-track-outline-color: transparent,
+    unselected-icon-color: white,
+    unselected-handle-color: $switch-inactive,
+    unselected-hover-handle-color: $switch-inactive,
+    unselected-focus-handle-color: $switch-inactive,
+    unselected-pressed-handle-color: $switch-inactive,
+    unselected-hover-state-layer-color: $switch-inactive,
+    unselected-focus-state-layer-color: $switch-inactive,
+    unselected-pressed-state-layer-color: $switch-inactive,
+    unselected-track-color: $switch-inactive-track,
+    unselected-hover-track-color: $switch-inactive-track,
+    unselected-focus-track-color: $switch-inactive-track,
+    unselected-pressed-track-color: $switch-inactive-track,
+    track-outline-color: transparent,
   ));
 }
 
@@ -99,4 +144,179 @@ html, body {
   font-weight: 400;
   line-height: 1.2;
   white-space: normal;
+}
+
+.state-select-panel {
+  min-width: 220px !important;
+}
+
+.cdk-overlay-pane.pref-menu-panel {
+  --mat-menu-container-min-width: 480px;
+  --mat-menu-container-max-width: 480px;
+  width: 480px !important;
+  min-width: 480px !important;
+  max-width: 480px !important;
+}
+
+.cdk-overlay-pane.pref-menu-panel .mat-mdc-menu-panel,
+.mat-mdc-menu-panel.pref-menu-panel {
+  width: 480px !important;
+  min-width: 480px !important;
+  max-width: 480px !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.cdk-overlay-pane.pref-menu-panel .mat-mdc-menu-content,
+.pref-menu-panel .mat-mdc-menu-content {
+  padding: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.pref-menu-body {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.app-dark {
+  background-color: #1b1d24;
+  color: #e8eaed;
+
+  .preferences-title,
+  .dashboard-title,
+  .pref-hdr,
+  .queue-title,
+  .pref-folder-value,
+  .queue-name {
+    color: #e8eaed;
+  }
+
+  .preferences-hint,
+  .dashboard-hint,
+  .pref-label,
+  .pref-folder-hint,
+  .queue-sub,
+  .queue-service,
+  .queue-id {
+    color: #a8adbb;
+  }
+
+  .pref-card,
+  .queue-card,
+  .queue-row {
+    background: #252830;
+    border-color: #3a3f4d;
+  }
+
+  .pref-hdr,
+  .queue-hdr {
+    background: #2f3340;
+    border-color: #3a3f4d;
+  }
+
+  .pref-folder {
+    border-color: #3a3f4d;
+  }
+
+  .pref-seg {
+    background: #2f3340;
+    border-color: #4a5060;
+  }
+
+  .pref-seg-btn {
+    color: #c5c9d4;
+  }
+
+  .pref-seg-btn + .pref-seg-btn {
+    border-left-color: #4a5060;
+  }
+
+  .pref-seg-btn:hover:not(.active) {
+    background: #3a3f4d;
+  }
+
+  .pref-seg-btn.active {
+    background: #7986cb;
+    color: #fff;
+  }
+
+  .cdk-overlay-pane.pref-menu-panel .mat-mdc-menu-panel,
+  .mat-mdc-menu-panel.pref-menu-panel {
+    background: #252830;
+  }
+
+  .queue-row:hover {
+    background: #323748;
+  }
+
+  .header-container {
+    background-color: #2c2f54;
+    border-color: #3d4070;
+  }
+
+  .menu-container {
+    background-color: #3949ab;
+    border-color: #1a237e;
+  }
+
+  .layout_menu_button {
+    background-color: #2f3340;
+    color: #e8eaed;
+    border-color: #5c6bc0;
+  }
+
+  .mat-mdc-card,
+  .mat-mdc-dialog-container,
+  .mat-mdc-menu-panel,
+  .mat-mdc-select-panel,
+  .mat-mdc-autocomplete-panel,
+  .cdk-overlay-pane .mat-mdc-menu-panel {
+    background: #252830;
+    color: #e8eaed;
+  }
+
+  .mat-mdc-form-field,
+  .mat-mdc-input-element,
+  .mat-mdc-select-value-text,
+  .mat-mdc-option,
+  .mat-mdc-list-item,
+  .mat-mdc-table,
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    color: #e8eaed;
+  }
+
+  .mat-mdc-table,
+  table.mat-mdc-table {
+    background: #252830;
+  }
+
+  .mat-mdc-row,
+  .mat-mdc-header-row {
+    background: #252830;
+    border-color: #3a3f4d;
+  }
+
+  input,
+  textarea,
+  select,
+  .filter-input,
+  .search-input {
+    background-color: #2f3340;
+    color: #e8eaed;
+    border-color: #4a5163;
+  }
+
+  .sidenav-container .mat-sidenav,
+  .mat-drawer,
+  .mat-sidenav {
+    background-color: #252830 !important;
+  }
+
+  .cpt-header,
+  .provider-details {
+    background-color: #2f3340 !important;
+    color: #e8eaed;
+  }
 }

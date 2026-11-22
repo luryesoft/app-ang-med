@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormField } from '@angular/forms/signals';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AppRoutingModule } from './app-routing.module';
@@ -9,7 +10,7 @@ import { UserloginComponent } from './userlogin/userlogin.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LayoutComponent } from './layout/layout.component';
 import { BusinessentityComponent } from './admin//businessentity/businessentity.component'; 
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,7 +25,8 @@ import { FacilitiesComponent } from './facilities/facilities.component';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatOptionModule } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_LOCALE, MatNativeDateModule, MatOptionModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { WarningModalComponent } from './warning-modal/warning-modal.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ProvidersComponent } from './providers/providers.component';
@@ -44,16 +46,21 @@ import { MatSortModule } from '@angular/material/sort';
 import { CptCodeDialogComponent } from './cpt-code-dialog/cpt-code-dialog.component'; 
 import { IcdCodeDialogComponent } from './miscellaneous/icd-code-dialog/icd-code-dialog.component';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PatientsComponent } from './patients/patients.component';
 import { ServiceCptDialogComponent } from './patients/service-cpt-dialog/service-cpt-dialog.component';
 import { ServiceIcdDialogComponent } from './patients/service-icd-dialog/service-icd-dialog.component';
+import { PatientSearchDialogComponent } from './patients/patient-search-dialog/patient-search-dialog.component';
 import { ReportsComponent } from './reports/reports.component';
+import { PreferencesComponent } from './preferences/preferences.component';
 import { SsnMaskPipe } from './pipes/ssn-mask.pipe';
 import { NumericOnlyDirective } from './pipes/numeric-only.directive';
+import { DateInputMaskDirective } from './pipes/date-input-mask.directive';
 import { NgxMaskDirective ,  provideNgxMask} from 'ngx-mask'; 
 import { JwtInterceptor } from './auth/jwt.interceptor';
 import { PdfComponent } from './pdfgen/pdfgen.component';
+import { MmddyyyyDateAdapter } from './pipes/mmddyyyy-date-adapter';
 
 
 @NgModule({
@@ -75,8 +82,11 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     PatientsComponent,
     ServiceCptDialogComponent,
     ServiceIcdDialogComponent,
+    PatientSearchDialogComponent,
+    PreferencesComponent,
     SsnMaskPipe,
     NumericOnlyDirective,
+    DateInputMaskDirective,
    // ReportsComponent,
    PdfComponent
   ],
@@ -85,6 +95,7 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     BrowserModule,
     FormsModule,  
     ReactiveFormsModule,
+    FormField,
     MatCardModule,
     CommonModule,
     BrowserAnimationsModule,
@@ -113,14 +124,19 @@ import { PdfComponent } from './pdfgen/pdfgen.component';
     MatSortModule,
     MatDialogModule,
     MatButtonToggleModule,
+    MatTabsModule,
     MatProgressSpinnerModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     NgxMaskDirective
   ],
   providers: [ 
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withXhr(), withInterceptorsFromDi()),
     CanDeactivateGuard,
     provideNgxMask(),
-    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
+    { provide: MAT_DATE_LOCALE, useValue: 'en-US' },
+    { provide: DateAdapter, useClass: MmddyyyyDateAdapter }
    ]
 })
 export class AppModule { }

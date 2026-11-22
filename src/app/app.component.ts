@@ -1,14 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { GlobalService } from './services/global.service';
+import { AuthService } from './auth/auth.service';
+import { UserPreferenceService } from './services/user-preference.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  template: `<h1>Hello, {{ title }}</h1>`,
-  imports: [RouterOutlet]
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss',
+    template: `<h1>Hello, {{ title }}</h1>`,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [RouterOutlet]
 })
 
 /*
@@ -25,9 +27,20 @@ export class AppComponent implements OnInit {
   islogged: boolean = false;
   userId:string ='';
 
-  constructor(private globalService: GlobalService) {}
+  constructor(
+    private globalService: GlobalService,
+    private authService: AuthService,
+    private userPreferenceService: UserPreferenceService
+  ) {}
   
   ngOnInit(): void {
+    this.authService.enforceBrowserSession();
+    this.userPreferenceService.applyStoredPreferences();
+    if (this.authService.isLoggedIn) {
+      this.userPreferenceService.getPreferences().subscribe({
+        error: () => undefined
+      });
+    }
     // Access or modify global variables
     this.userName = this.globalService.getUserName();
     this.globalService.userName = this.userName;

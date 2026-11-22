@@ -151,7 +151,7 @@
     .delete-icon {
       margin-left: 16px;
       cursor: pointer;
-      color: #cc1212;
+      color: red;
       visibility: hidden;
     }
   
@@ -257,9 +257,9 @@
     align-items: center;
   }
   
-  .ddelete-facility-icon {
+  .delete-facility-icon {
     cursor: pointer;
-    color: black; /* Initial color for the delete icon */
+    color: red;
     transition: color 0.3s;
   }
   

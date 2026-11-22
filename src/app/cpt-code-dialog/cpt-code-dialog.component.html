@@ -1,51 +1,77 @@
 
 <div class="container">
-    <div class="filter-input-container">
-      <input class="filter-input" type="text" 
-      placeholder="Filter by CPT code or Description"
-      [(ngModel)]="filterQuery" 
-      (input)="applyFilter()">
-      <button mat-icon-button matSuffix *ngIf="filterQuery" (click)="clearFilter()">
+  <div class="filter-input-container">
+    <input class="filter-input" type="text"
+      placeholder="Code or short name, at least 4 characters"
+      [(ngModel)]="filterQuery"
+      (keydown)="onKeydown($event)">
+      <button mat-icon-button type="button" aria-label="Search catalog" (click)="applySearch()">
+        <mat-icon>search</mat-icon>
+      </button>
+      <button mat-icon-button type="button" matSuffix (click)="clearFilter()">
         <mat-icon class="clear-icon">cancel</mat-icon>
       </button>
       <h1 mat-dialog-title>CPT Codes</h1>
-      <mat-button-toggle-group [(value)]="toggleState" (change)="toggleFilter($event.value)" 
-      [hideSingleSelectionIndicator]="toggleSingleSelectionIndicator()"
-      name="filterOptions" aria-label="Filter Options">
+      <mat-button-toggle-group [(value)]="toggleState" (change)="toggleFilter($event.value)"
+        [hideSingleSelectionIndicator]="toggleSingleSelectionIndicator()"
+        name="filterOptions" aria-label="Filter Options">
         <mat-button-toggle value="all">All</mat-button-toggle>
         <mat-button-toggle value="selected">Selected</mat-button-toggle>
       </mat-button-toggle-group>
+    </div>
+    <div class="scrollable-content">
+      @if (!isLoading && !filteredCptCodes.length) {
+        <p class="catalog-empty">
+          @if (shortQuery) {
+            Type at least 4 characters.
+          } @else if (searched) {
+            No matching CPT codes.
+          } @else {
+            Search by code or short name.
+          }
+        </p>
+      }
+      @if (!isLoading && filteredCptCodes.length) {
+      <mat-list>
+        @for (cptCode of filteredCptCodes; track cptCode) {
+          <mat-list-item
+            [ngClass]="{'selected-row': selectedCptCodes.has(cptCode.cpt_code)}"
+            (click)="onCatalogRow(cptCode)">
+            <div class="list-item-content">
+              <span>{{ cptCode.cpt_code }}
+                &nbsp;
+                <small>{{ cptCode.cpt_code_description }}</small>
+                @if (isAssigned(cptCode)) {
+                  <small class="assigned-note">Already assigned</small>
+                }
+              </span>
+              <mat-checkbox class="checkbox-style"
+                [checked]="selectedCptCodes.has(cptCode.cpt_code)"
+                [disabled]="isAssigned(cptCode)"
+                (click)="$event.stopPropagation(); onCatalogRow(cptCode)">
+              </mat-checkbox>
+            </div>
+          </mat-list-item>
+        }
+      </mat-list>
+      }
+
+    </div>
   </div>
-  <div class="scrollable-content">
-    <mat-list>
-      <mat-list-item 
-      *ngFor="let cptCode of filteredCptCodes"
-      [ngClass]="{'selected-row': selectedCptCodes.has(cptCode.cpt_code)}">
-      <div class="list-item-content">
-        <span>{{ cptCode.cpt_code }} 
-          &nbsp;
-          <small>{{ cptCode.cpt_code_description }}</small>
-        </span>
-        <mat-checkbox class="checkbox-style"
-          [checked]="selectedCptCodes.has(cptCode.cpt_code)" 
-          (change)="toggleSelection(cptCode.cpt_code)">
-        </mat-checkbox>
-      </div>  
-      </mat-list-item>
-    </mat-list> 
 
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-button class="cancel-button"  (click)="dialogRef.close()">Cancel</button>
+    <button mat-button class="confirm-button" (click)="confirmCopy()">Confirm</button>
   </div>
-</div>
 
-<div mat-dialog-actions class="dialog-actions">
-  <button mat-button class="cancel-button"  (click)="dialogRef.close()">Cancel</button>
-  <button mat-button class="confirm-button" (click)="openWarningDialog('Are you sure you want to copy the selected CPT codes?')">Confirm</button>  
-</div>
+  @if (showPopup) {
+    <div class="error-popup">
+      {{ errorMessage }}
+    </div>
+  }
 
-<div *ngIf="showPopup" class="error-popup">
-  {{ errorMessage }}
-</div>
-
-<div *ngIf="showSuccessPopup" class="popup-success">
-  {{ successMessage }}
-</div>
+  @if (showSuccessPopup) {
+    <div class="popup-success">
+      {{ successMessage }}
+    </div>
+  }

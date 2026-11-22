@@ -2,11 +2,21 @@
     <div class="ptn_search_hdr" style="position: relative;">
     <span class="ptn_search_hdr_txt">Patient</span>
       <div class="search-dropdown">
-        <input type="text" class="search-input" [(ngModel)]="searchQuery" (keydown)="onEnter($event)" placeholder="Last name, patient ID, last 4 SSN, or ALL">
+        <div class="search-input-row">
+          <input type="text" class="search-input" [(ngModel)]="searchQuery" (keydown)="onEnter($event)" placeholder="Last name, patient ID, last 4 SSN, or ALL">
+          <mat-icon
+            class="search-more-icon"
+            fontSet="material-symbols-outlined"
+            matTooltip="More search options"
+            (click)="openAdvancedSearch()">person_search</mat-icon>
+        </div>
         <ul *ngIf="filteredOptions.length > 0" class="dropdown-list">
           <li *ngFor="let option of filteredOptions" (click)="onOptionClick(option)">
-            {{ option.ptn_last_nm }}, {{ option.ptn_first_nm }}
-            <span *ngIf="option.ptn_id" class="search-ptn-id">({{ option.ptn_id }})</span>
+            <div class="search-result-name">
+              {{ option.ptn_last_nm }}, {{ option.ptn_first_nm }}
+              <span *ngIf="option.ptn_id" class="search-ptn-id">({{ option.ptn_id }})</span>
+            </div>
+            <div class="search-result-meta" *ngIf="searchResultMeta(option) as meta">{{ meta }}</div>
           </li>
         </ul>
       </div>
@@ -16,7 +26,7 @@
         <mat-icon class="add-icon"
         [class.icon-disabled]="!selectedOption?.ptn_id"
         style="font-variation-settings: 'wght' 200;color:rgb(35, 92, 214);"
-        matTooltip="Generate PDF" (click)="generatePDFone()">picture_as_pdf</mat-icon>
+        matTooltip="Patient Info" (click)="generatePDFone()">picture_as_pdf</mat-icon>
 
         <mat-icon class="add-icon" 
         style="font-variation-settings: 'wght' 200;color:green;"
@@ -32,142 +42,164 @@
       </div>
     </div>
     <div class="ptn_details">
-  <mat-accordion>
-      <mat-expansion-panel hideToggle [disabled]="isUpdateMode && !selectedOption?.ptn_id" #panel1>
-        <mat-expansion-panel-header class="ptn_details_hdr">
-          <mat-panel-title>Patient Information: {{ selectedOption?.ptn_first_nm }} {{ selectedOption?.ptn_last_nm }} 
-          <span class="span-ptn_id" *ngIf="selectedOption?.ptn_id">(ID: {{ selectedOption.ptn_id }})</span></mat-panel-title>
-          <mat-panel-description *ngIf="selectedOption?.ptn_date_of_birth">
-            <span class="ptn_details_hdr">DOB:</span>{{ selectedOption?.ptn_date_of_birth  | date:'YYYY-MM-dd' }}
-            <span class="ptn_details_hdr">Address:</span> {{ selectedOption?.ptn_address }}  
-            ,&nbsp; {{ selectedOption?.ptn_city }}
-            &nbsp;{{ selectedOption?.ptn_state }}
-            &nbsp;{{ selectedOption?.ptn_zip }}
-            &nbsp;&#9;<span *ngIf="ssnLast4"  class="ptn_details_hdr">SSN#:</span><span>{{ ssnLast4 | ssnMask }}</span> 
- 
-            <mat-icon class="chevron-icon">
-              {{ panel1?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
-            </mat-icon> 
-          </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <mat-divider class="thick-divider"></mat-divider>
-
+  <mat-tab-group class="patient-tabs" animationDuration="0ms" [selectedIndex]="patientTab" (selectedIndexChange)="patientTab = $event">
+    <mat-tab>
+      <ng-template mat-tab-label>Patient</ng-template>
+      <mat-accordion>
+        <mat-expansion-panel hideToggle [disabled]="isUpdateMode && !selectedOption?.ptn_id" #panel1>
+          <mat-expansion-panel-header class="ptn_details_hdr">
+            <mat-panel-title>Patient Information: {{ selectedOption?.ptn_first_nm }} {{ selectedOption?.ptn_last_nm }}
+              <span class="span-ptn_id" *ngIf="selectedOption?.ptn_id">(ID: {{ selectedOption.ptn_id }})</span>
+            </mat-panel-title>
+            <mat-panel-description *ngIf="selectedOption?.ptn_date_of_birth">
+              <span class="ptn_details_hdr">DOB:</span>{{ $safeNavigationMigration(selectedOption?.ptn_date_of_birth) | date:'MM/dd/yyyy' }}
+              <span class="ptn_details_hdr">Address:</span> {{ selectedOption?.ptn_address }}
+              ,&nbsp; {{ selectedOption?.ptn_city }}
+              &nbsp;{{ selectedOption?.ptn_state }}
+              &nbsp;{{ selectedOption?.ptn_zip }}
+              &nbsp;<span *ngIf="ssnLast4" class="ptn_details_hdr">SSN#:</span><span *ngIf="ssnLast4">{{ ssnLast4 | ssnMask }}</span>
+              <mat-icon class="chevron-icon">
+                {{ panel1?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+              </mat-icon>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <mat-divider class="thick-divider"></mat-divider>
         <form [formGroup]="patientForm" (ngSubmit)="onSubmit()">
             <div class="form-row">
-            <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+            <mat-form-field appearance="fill" class="form-field field-name">
                 <mat-label class="form-label">First Name</mat-label>
                 <input matInput formControlName="ptn_first_nm" required maxlength="30">
                 <mat-error class="error-message"*ngIf="patientForm.get('ptn_first_nm')?.hasError('required')">
                   required
                 </mat-error>
               </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field" style="width: 70pt;">
+              <mat-form-field appearance="fill" class="form-field field-init">
                 <mat-label class="form-label">Mid Init</mat-label>
                 <input matInput formControlName="ptn_mid_init" maxlength="3">
               </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+                <mat-form-field appearance="fill" class="form-field field-name">
               <mat-label class="form-label" >Last Name</mat-label>
               <input matInput formControlName="ptn_last_nm" required maxlength="30">
               <mat-error class="error-message"*ngIf="patientForm.get('ptn_last_nm')?.hasError('required')">
                 required
               </mat-error>
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+            <mat-form-field appearance="fill" class="form-field date-field">
               <mat-label class="form-label" >Date of Birth</mat-label>
-              <input matInput formControlName="ptn_date_of_birth"  mask="00/00/0000" placeholder="MM/DD/YYYY">
+              <input matInput dateMask maxlength="10" [matDatepicker]="pickerDob" formControlName="ptn_date_of_birth" [max]="todayDate" placeholder="MM/DD/YYYY">
+              <mat-datepicker-toggle matSuffix [for]="pickerDob" class="datepicker-toggle">
+                <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+              </mat-datepicker-toggle>
+              <mat-datepicker #pickerDob></mat-datepicker>
             </mat-form-field> 
-              <mat-form-field appearance="fill" class="form-field" style="width: 90pt;">
+              <mat-form-field appearance="fill" class="form-field field-sex">
               <mat-label class="form-label">Sex</mat-label>
                 <mat-select formControlName="ptn_sex">
                     <mat-option [value]="'M'">Male</mat-option>
                     <mat-option [value]="'F'">Female</mat-option>
                   </mat-select>
               </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
-                <mat-label class="form-label">SSN#</mat-label>
-                <input *ngIf="!isUpdateMode || ssnReplaceMode"
-                  matInput
-                  formControlName="ptn_ssn"
-                  mask="000-00-0000"
-                  maxlength="11"
-                  placeholder="000-00-0000">
-                <input *ngIf="isUpdateMode && !ssnReplaceMode"
-                  matInput
-                  [value]="ssnLast4 | ssnMask"
-                  readonly>
-              </mat-form-field>
-              <button *ngIf="isUpdateMode && !ssnReplaceMode"
-                mat-stroked-button
-                type="button"
-                class="ssn-replace-btn"
-                (click)="enableSsnReplace()">Replace</button>
+              <div class="ssn-field-wrap">
+                <mat-form-field *ngIf="isUpdateMode && !ssnReplaceMode" appearance="fill" class="form-field">
+                  <mat-label class="form-label">SSN#</mat-label>
+                  <input matInput [value]="ssnLast4 | ssnMask" readonly>
+                </mat-form-field>
+                <mat-form-field *ngIf="!isUpdateMode || ssnReplaceMode" appearance="fill" class="form-field">
+                  <mat-label class="form-label">SSN#</mat-label>
+                  <input matInput
+                    formControlName="ptn_ssn"
+                    mask="000-00-0000"
+                    [dropSpecialCharacters]="true"
+                    maxlength="11"
+                    placeholder="000-00-0000">
+                </mat-form-field>
+                <mat-icon
+                  *ngIf="isUpdateMode && !ssnReplaceMode"
+                  class="ssn-update-icon"
+                  [class.icon-disabled]="ssnLoading"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Update SSN"
+                  (click)="enableSsnReplace()">edit_square</mat-icon>
+              </div>
  
-              <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+              <mat-form-field appearance="fill" class="form-field field-phone">
                 <mat-label class="form-label">Home Phone</mat-label>
                 <input matInput formControlName="ptn_home_phone" mask="(000) 000-0000" maxlength="15" placeholder="(555) 555-5555">
               </mat-form-field>
  
-              <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+              <mat-form-field appearance="fill" class="form-field field-phone">
                 <mat-label class="form-label">Mobile Phone</mat-label>
                 <input matInput formControlName="ptn_mobile_phone"  mask="(000) 000-0000" maxlength="15" placeholder="(555) 555-5555">
 
               </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field" style="width: 240pt;">
+              <mat-form-field appearance="fill" class="form-field field-occupation">
                 <mat-label class="form-label">Occupation</mat-label>
                 <input matInput formControlName="ptn_occupation" maxlength="70">
               </mat-form-field>              
              </div>
              <div class="form-row">
 
-                <mat-form-field appearance="fill" class="form-field" style="width: 255pt;">
+                <mat-form-field appearance="fill" class="form-field field-address">
                     <mat-label class="form-label">Address</mat-label>
                     <input matInput formControlName="ptn_address" maxlength="50">
                   </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 190pt;">
-                    <mat-label class="form-label">City</mat-label>
-                    <input matInput formControlName="ptn_city" maxlength="35">
-                  </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 60pt;">
+                <mat-form-field appearance="fill" class="form-field field-state">
                     <mat-label class="form-label">State</mat-label>
-                    <input matInput formControlName="ptn_state" maxlength="2">
+                    <mat-select formControlName="ptn_state" panelClass="state-select-panel" (selectionChange)="onStateChange()">
+                      <mat-select-trigger>
+                        {{ patientForm.get('ptn_state')?.value }}
+                      </mat-select-trigger>
+                      <mat-option *ngFor="let st of states" [value]="st.state_cd">
+                        {{ st.state_cd }} — {{ st.state_nm }}
+                      </mat-option>
+                    </mat-select>
                 </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 70pt;">
+                <mat-form-field appearance="fill" class="form-field field-city">
+                    <mat-label class="form-label">City</mat-label>
+                    <input matInput
+                      [formControl]="citySearchCtrl"
+                      [matAutocomplete]="autoCity"
+                      (blur)="onCityBlur()"
+                      (focus)="$any($event.target).select()"
+                      maxlength="35"
+                      [placeholder]="patientForm.get('ptn_state')?.value ? 'Type to search' : 'Select a state first'">
+                    <button *ngIf="citySearchCtrl.value" mat-icon-button matSuffix type="button" (click)="clearCity()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                    <mat-autocomplete #autoCity="matAutocomplete"
+                      [displayWith]="displayCity"
+                      (optionSelected)="onCitySelected($event)">
+                      <mat-option *ngFor="let city of filteredCities$ | async" [value]="city">
+                        {{ city.city_nm }}
+                      </mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                <mat-form-field appearance="fill" class="form-field field-zip">
                     <mat-label class="form-label">Zip</mat-label>
                     <input matInput formControlName="ptn_zip" numericOnly maxlength="9"> 
                 </mat-form-field>  
-                <mat-form-field appearance="fill" class="form-field" style="width: 100pt;">
+                <mat-form-field appearance="fill" class="form-field field-status">
                 <mat-label class="form-label">Status</mat-label>
                 <mat-select formControlName="ptn_active_flag" required>
                     <mat-option [value]="'Y'">Active</mat-option>
                     <mat-option [value]="'N'">Inactive</mat-option>
                   </mat-select>
                 </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 470pt;text-transform: none;">
+                <mat-form-field appearance="fill" class="form-field field-comments">
                     <mat-label class="form-label">Comments</mat-label>
                     <input matInput formControlName="ptn_comments" maxlength="200"> 
                 </mat-form-field>
             </div>
             <div class="form-row">
-                <mat-form-field appearance="fill" class="form-field" style="width: 120pt;">
+                <mat-form-field appearance="fill" class="form-field date-field">
                   <mat-label class="form-label">Date of Accident</mat-label>
-                  <input matInput formControlName="ptn_date_of_accident" mask="00/00/0000" placeholder="MM/DD/YYYY">
+                  <input matInput dateMask maxlength="10" [matDatepicker]="pickerAccident" formControlName="ptn_date_of_accident" [max]="todayDate" placeholder="MM/DD/YYYY">
+                  <mat-datepicker-toggle matSuffix [for]="pickerAccident" class="datepicker-toggle">
+                    <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+                  </mat-datepicker-toggle>
+                  <mat-datepicker #pickerAccident></mat-datepicker>
                 </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 160pt;">
-                  <mat-label class="form-label">Policy #</mat-label>
-                  <input matInput formControlName="ptn_policy_no" maxlength="40">
-                </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 160pt;">
-                  <mat-label class="form-label">Claim #</mat-label>
-                  <input matInput formControlName="ptn_claim_no" maxlength="40">
-                </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
-                  <mat-label class="form-label">Policyholder</mat-label>
-                  <input matInput formControlName="ptn_policyholder" maxlength="70">
-                </mat-form-field>
-            </div>
-            <div class="form-row">
-                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
+                <mat-form-field appearance="fill" class="form-field field-wide">
                   <mat-label class="form-label">Lawyer</mat-label>
                   <mat-select formControlName="lw_id" [compareWith]="compareIds">
                     <mat-option [value]="null">None</mat-option>
@@ -176,11 +208,17 @@
                     </mat-option>
                   </mat-select>
                 </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
+                <mat-form-field appearance="fill" class="form-field field-wide">
                   <mat-label class="form-label">Provider</mat-label>
                   <input matInput [value]="companyName" readonly>
                 </mat-form-field>
-                <mat-form-field appearance="fill" class="form-field" style="width: 280pt;">
+                <mat-form-field appearance="fill" class="form-field field-wide">
+                  <mat-label class="form-label">Policyholder</mat-label>
+                  <input matInput formControlName="ptn_policyholder" maxlength="70">
+                </mat-form-field>
+            </div>
+            <div class="form-row">
+                <mat-form-field appearance="fill" class="form-field field-wide">
                   <mat-label class="form-label">Insurance</mat-label>
                   <input matInput
                     [formControl]="insuranceSearchCtrl"
@@ -203,15 +241,62 @@
                     </mat-option>
                   </mat-autocomplete>
                 </mat-form-field>
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label class="form-label">Policy #</mat-label>
+                  <input matInput formControlName="ptn_policy_no" maxlength="40">
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="form-field">
+                  <mat-label class="form-label">Claim #</mat-label>
+                  <input matInput formControlName="ptn_claim_no" maxlength="40">
+                </mat-form-field>
                 <button mat-raised-button color="primary" type="submit">
                   {{ isUpdateMode ? 'Update Patient' : 'Add Patient' }}
                 </button>
             </div>
           </form>
-      </mat-expansion-panel>
+        </mat-expansion-panel>
 
-  </mat-accordion>
+        <mat-expansion-panel hideToggle [disabled]="!selectedOption?.ptn_id" #panelDx>
+          <mat-expansion-panel-header class="ptn_details_hdr">
+            <mat-panel-title>
+              Diagnosis (ICD)
+              <span class="span-ptn_id" *ngIf="diagnoses.length">({{ diagnoses.length }})</span>
+            </mat-panel-title>
+            <mat-panel-description>
+              <span>{{ diagnosisSummary }}</span>
+              <button
+                mat-stroked-button
+                type="button"
+                class="dx-save-btn"
+                (mousedown)="$event.stopPropagation()"
+                (click)="$event.stopPropagation(); saveDiagnoses($event)">Save</button>
+              <mat-icon
+                class="add-icon"
+                matTooltip="Select company ICD codes"
+                (mousedown)="$event.stopPropagation()"
+                (click)="openPatientIcdDialog($event)">list_alt_add</mat-icon>
+              <mat-icon class="chevron-icon">
+                {{ panelDx?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+              </mat-icon>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <mat-divider class="thick-divider"></mat-divider>
+          <div class="dx-panel-body">
+          <div *ngIf="diagnoses.length === 0" class="empty-hint">
+            Assign ICD codes once for this patient. They apply to every service.
+          </div>
+          <div class="code-row" *ngFor="let dx of diagnoses; let i = index">
+            <span class="code-value">{{ dx.icd_code }}</span>
+            <span class="code-desc">{{ dx.description }}</span>
+            <mat-icon class="row-remove" matTooltip="Remove diagnosis" (click)="removeDiagnosis(i)">close</mat-icon>
+          </div>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </mat-tab>
 
+    <mat-tab [disabled]="!selectedOption?.ptn_id">
+      <ng-template mat-tab-label>Services</ng-template>
     <div class="billing-workspace" *ngIf="selectedOption?.ptn_id">
       <div class="ptn-summary">
         <div class="ptn-summary-main">
@@ -228,7 +313,7 @@
           <span><label>Insurance</label>{{ selectedInsuranceName }}</span>
           <span><label>Lawyer</label>{{ selectedLawyerName }}</span>
           <span><label>Provider</label>{{ companyName }}</span>
-          <span><label>Accident</label>{{ patientForm.get('ptn_date_of_accident')?.value || '—' }}</span>
+          <span><label>Accident</label>{{ formatDateForInput($safeNavigationMigration(patientForm.get('ptn_date_of_accident')?.value)) || '—' }}</span>
           <span><label>Policy #</label>{{ patientForm.get('ptn_policy_no')?.value || '—' }}</span>
           <span><label>Claim #</label>{{ patientForm.get('ptn_claim_no')?.value || '—' }}</span>
           <span><label>Policyholder</label>{{ patientForm.get('ptn_policyholder')?.value || '—' }}</span>
@@ -258,10 +343,20 @@
                   class="svc-print-icon"
                   matTooltip="Print NF-3"
                   (click)="printNf3(svc, $event)">print</mat-icon>
+                <mat-icon
+                  class="svc-print-icon"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Print delivery list"
+                  (click)="printAob(svc, 'delivery', $event)">inventory_2</mat-icon>
+                <mat-icon
+                  class="svc-print-icon"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Print AOB"
+                  (click)="printAob(svc, 'aob', $event)">contract</mat-icon>
                 <span class="status-chip" [ngClass]="statusClass(svc.status)">{{ svc.status }}</span>
               </span>
             </div>
-            <div class="svc-item-mid">{{ svc.provider_nm || 'No provider' }}</div>
+            <div class="svc-item-mid">{{ serviceLocationLabel(svc) }}</div>
             <div class="svc-item-bottom">
               <span>{{ serviceBilled(svc) | currency:'USD':'symbol':'1.2-2' }}</span>
               <span class="svc-balance">Bal {{ serviceBalance(svc) | currency:'USD':'symbol':'1.2-2' }}</span>
@@ -270,32 +365,118 @@
         </div>
 
         <div class="svc-detail-panel" *ngIf="selectedService; else noServiceSelected">
-          <div class="section-hdr">
-            <span>Service {{ selectedService.svc_date | date:'MM/dd/yyyy' }}</span>
-            <div class="section-hdr-actions">
-              <mat-icon
-                class="add-icon svc-print-icon"
-                matTooltip="Print NF-3"
-                (click)="printNf3(selectedService, $event)">print</mat-icon>
-              <mat-icon
-                class="delete-icon"
-                matTooltip="Delete this service"
-                (click)="confirmDeleteService()">delete_outline</mat-icon>
-            </div>
-          </div>
+          <mat-accordion class="svc-accordion">
+          <mat-expansion-panel class="pay-panel" hideToggle #panelSvc expanded>
+            <mat-expansion-panel-header class="ptn_details_hdr">
+              <mat-panel-title>Service {{ selectedService.svc_date | date:'MM/dd/yyyy' }}</mat-panel-title>
+              <mat-panel-description>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="dx-save-btn svc-save-btn"
+                  [class.save-needed]="hasUnsavedServiceChanges()"
+                  [disabled]="!hasUnsavedServiceChanges()"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="$event.stopPropagation(); saveService()">Save</button>
+                <mat-icon
+                  class="add-icon svc-print-icon"
+                  matTooltip="Print NF-3"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="printNf3(selectedService, $event)">print</mat-icon>
+                <mat-icon
+                  class="add-icon svc-print-icon"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Print delivery list"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="printAob(selectedService, 'delivery', $event)">inventory_2</mat-icon>
+                <mat-icon
+                  class="add-icon svc-print-icon"
+                  fontSet="material-symbols-outlined"
+                  matTooltip="Print AOB"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="printAob(selectedService, 'aob', $event)">contract</mat-icon>
+                <mat-icon
+                  class="delete-icon"
+                  fontSet="material-symbols-outlined"
+                  style="font-variation-settings: 'wght' 200;color:red;"
+                  matTooltip="Delete this service"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="confirmDeleteService()">delete_outline</mat-icon>
+                <mat-icon class="chevron-icon">
+                  {{ panelSvc?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+                </mat-icon>
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+            <mat-divider class="thick-divider"></mat-divider>
 
           <div class="svc-header-form">
-            <mat-form-field appearance="fill" class="form-field svc-field-date">
+            <mat-form-field appearance="fill" class="form-field date-field">
               <mat-label class="form-label">Date of service</mat-label>
-              <input matInput [(ngModel)]="selectedService.svc_date" mask="00/00/0000" placeholder="MM/DD/YYYY">
+              <input matInput
+                dateMask
+                maxlength="10"
+                [matDatepicker]="pickerSvcDate"
+                [(ngModel)]="selectedService.svc_date"
+                (dateChange)="onServiceDateChange($event)"
+                [max]="todayDate"
+                placeholder="MM/DD/YYYY">
+              <mat-datepicker-toggle matSuffix [for]="pickerSvcDate" class="datepicker-toggle">
+                <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+              </mat-datepicker-toggle>
+              <mat-datepicker #pickerSvcDate></mat-datepicker>
             </mat-form-field>
-            <mat-form-field appearance="fill" class="form-field svc-field-provider">
-              <mat-label class="form-label">Service provider</mat-label>
-              <input matInput [(ngModel)]="selectedService.provider_nm" maxlength="70">
+            <mat-form-field appearance="fill" class="form-field svc-field-facility">
+              <mat-label class="form-label">Treating office</mat-label>
+              <mat-select
+                [(ngModel)]="selectedService.facility_id"
+                [compareWith]="compareIds"
+                (selectionChange)="onServiceFacilityChange()">
+                <mat-option [value]="null">Select treating office</mat-option>
+                <mat-option *ngFor="let facility of facilities" [value]="facility.facility_id">
+                  {{ facility.facility_nm }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field
+              appearance="fill"
+              class="form-field svc-field-provider"
+              [class.svc-field-locked]="!hasTreatingOffice()">
+              <mat-label class="form-label">Treating provider</mat-label>
+              <mat-select
+                [(ngModel)]="selectedService.provider_id"
+                [compareWith]="compareIds"
+                [disabled]="!hasTreatingOffice()"
+                (selectionChange)="onServiceProviderChange()">
+                <mat-option [value]="null">
+                  {{ hasTreatingOffice() ? 'Select treating provider' : 'Select treating office first' }}
+                </mat-option>
+                <mat-option
+                  *ngFor="let provider of officeProviders"
+                  [value]="provider.provider_id">
+                  {{ provider.provider_nm }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="form-field date-field">
+              <mat-label class="form-label">Billing date</mat-label>
+              <input matInput
+                dateMask
+                maxlength="10"
+                [matDatepicker]="pickerBillDate"
+                [(ngModel)]="selectedService.billing_date"
+                (focus)="rememberBillingDate()"
+                (dateChange)="onBillingDateChange($event)"
+                (blur)="commitBillingDate()"
+                [max]="todayDate"
+                placeholder="MM/DD/YYYY">
+              <mat-datepicker-toggle matSuffix [for]="pickerBillDate" class="datepicker-toggle">
+                <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+              </mat-datepicker-toggle>
+              <mat-datepicker #pickerBillDate></mat-datepicker>
             </mat-form-field>
             <mat-form-field appearance="fill" class="form-field svc-field-status">
               <mat-label class="form-label">Status</mat-label>
-              <mat-select [(ngModel)]="selectedService.status">
+              <mat-select [ngModel]="selectedService.status" (ngModelChange)="onServiceStatusChange($event)">
                 <mat-option *ngFor="let status of serviceStatuses" [value]="status">{{ status }}</mat-option>
               </mat-select>
             </mat-form-field>
@@ -324,27 +505,8 @@
 
           <div class="detail-card">
             <div class="section-hdr">
-              <span>Diagnosis (ICD)</span>
-              <mat-icon
-                class="add-icon"
-                matTooltip="Select company ICD codes"
-                (click)="openServiceIcdDialog()">list_alt_add</mat-icon>
-            </div>
-            <div *ngIf="selectedService.diagnoses.length === 0" class="empty-hint">
-              Use the list icon to assign company ICD codes.
-            </div>
-            <div class="code-row" *ngFor="let dx of selectedService.diagnoses; let i = index">
-              <span class="code-value">{{ dx.icd_code }}</span>
-              <span class="code-desc">{{ dx.description }}</span>
-              <mat-icon class="row-remove" matTooltip="Remove diagnosis" (click)="removeDiagnosis(i)">close</mat-icon>
-            </div>
-          </div>
-
-          <div class="detail-card">
-            <div class="section-hdr">
               <span>Service details (CPT)</span>
               <div class="section-hdr-actions">
-                <button mat-stroked-button type="button" (click)="saveCptLines()">Save</button>
                 <mat-icon
                   class="add-icon"
                   matTooltip="Select company CPT codes"
@@ -352,9 +514,17 @@
               </div>
             </div>
             <div *ngIf="selectedService.lines.length === 0" class="empty-hint">
-              Use the list icon to add company CPT codes, then edit and Save.
+              Use the list icon to add company CPT codes. Modifier and charge come with the selected code and can be edited before Save.
             </div>
             <table class="billing-table cpt-edit-table" *ngIf="selectedService.lines.length > 0">
+              <colgroup>
+                <col class="col-cpt">
+                <col class="col-desc">
+                <col class="col-mod">
+                <col class="col-units">
+                <col class="col-amt">
+                <col class="col-remove">
+              </colgroup>
               <thead>
                 <tr>
                   <th>CPT</th>
@@ -368,19 +538,26 @@
               <tbody>
                 <tr *ngFor="let line of selectedService.lines; let i = index">
                   <td>
-                    <input class="cell-input cell-code" maxlength="5" [(ngModel)]="line.cpt_code">
+                    <input class="cell-input cell-code" maxlength="15" [(ngModel)]="line.cpt_code">
                   </td>
                   <td>
-                    <input class="cell-input" maxlength="80" [(ngModel)]="line.description">
+                    <input class="cell-input cell-desc" maxlength="150" [(ngModel)]="line.description">
                   </td>
                   <td>
-                    <input class="cell-input cell-mod" maxlength="3" [(ngModel)]="line.modifier">
+                    <input class="cell-input cell-mod" maxlength="4" [(ngModel)]="line.modifier">
                   </td>
                   <td class="num">
-                    <input class="cell-input cell-num" type="number" min="1" [(ngModel)]="line.units">
+                    <input class="cell-input cell-num" type="text" inputmode="numeric" numericOnly maxlength="5"
+                      [ngModel]="line.units" (ngModelChange)="setLineUnits(line, $event)">
                   </td>
                   <td class="num">
-                    <input class="cell-input cell-num" type="number" min="0" step="0.01" [(ngModel)]="line.amount">
+                    <input class="cell-input cell-num" type="text"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      prefix="$ "
+                      [dropSpecialCharacters]="true"
+                      [allowNegativeNumbers]="false"
+                      [(ngModel)]="line.amount">
                   </td>
                   <td>
                     <mat-icon class="row-remove" matTooltip="Remove CPT line" (click)="removeCptLine(i)">close</mat-icon>
@@ -389,15 +566,38 @@
               </tbody>
             </table>
           </div>
+          </mat-expansion-panel>
 
-          <div class="detail-card">
-            <div class="section-hdr">
-              <span>Payments</span>
-            </div>
+          <mat-expansion-panel class="pay-panel" hideToggle #panelPay>
+            <mat-expansion-panel-header class="ptn_details_hdr">
+              <mat-panel-title>
+                Payments
+                <span class="span-ptn_id" *ngIf="selectedService.payments.length">({{ selectedService.payments.length }})</span>
+              </mat-panel-title>
+              <mat-panel-description>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="dx-save-btn"
+                  [class.save-needed]="hasUnsavedServiceChanges()"
+                  [disabled]="!hasUnsavedServiceChanges()"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="$event.stopPropagation(); saveService()">Save</button>
+                <mat-icon
+                  class="add-icon"
+                  matTooltip="Add payment"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="addPaymentRow(); panelPay.open()">playlist_add</mat-icon>
+                <mat-icon class="chevron-icon">
+                  {{ panelPay?.expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+                </mat-icon>
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+            <mat-divider class="thick-divider"></mat-divider>
             <div *ngIf="selectedService.payments.length === 0" class="empty-hint">
-              Record insurer or patient payments against this service.
+              Use the add icon to record a payment. Edit the row, then Save.
             </div>
-            <table class="billing-table" *ngIf="selectedService.payments.length > 0">
+            <table class="billing-table pay-edit-table" *ngIf="selectedService.payments.length > 0">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -409,41 +609,55 @@
               </thead>
               <tbody>
                 <tr *ngFor="let pay of selectedService.payments; let i = index">
-                  <td>{{ pay.pay_date | date:'MM/dd/yyyy' }}</td>
-                  <td>{{ pay.method }}</td>
-                  <td>{{ pay.reference }}</td>
-                  <td class="num">{{ pay.amount | currency:'USD':'symbol':'1.2-2' }}</td>
+                  <td>
+                    <ng-container *ngTemplateOutlet="paymentDateCell; context: { $implicit: pay }"></ng-container>
+                  </td>
+                  <td>
+                    <select class="cell-input pay-method-select" [(ngModel)]="pay.method" (ngModelChange)="onPaymentChange()">
+                      <option value="Check">Check</option>
+                      <option value="EFT">EFT</option>
+                      <option value="Patient">Patient</option>
+                      <option value="Adjustment">Adjustment</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input class="cell-input" maxlength="30" [(ngModel)]="pay.reference">
+                  </td>
+                  <td class="num">
+                    <input class="cell-input cell-num" type="text"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      prefix="$ "
+                      [dropSpecialCharacters]="true"
+                      [allowNegativeNumbers]="false"
+                      [(ngModel)]="pay.amount"
+                      (ngModelChange)="onPaymentChange()">
+                  </td>
                   <td>
                     <mat-icon class="row-remove" matTooltip="Remove payment" (click)="removePayment(i)">close</mat-icon>
                   </td>
                 </tr>
               </tbody>
             </table>
-            <div class="inline-add">
-              <mat-form-field appearance="fill" class="form-field add-date">
+            <ng-template #paymentDateCell let-pay>
+              <mat-form-field appearance="fill" class="form-field date-field pay-date-field">
                 <mat-label class="form-label">Pay date</mat-label>
-                <input matInput [(ngModel)]="newPayDate" mask="00/00/0000" placeholder="MM/DD/YYYY">
+                <input matInput
+                  dateMask
+                  maxlength="10"
+                  [matDatepicker]="payDatePicker"
+                  [(ngModel)]="pay.pay_date"
+                  (dateChange)="onPaymentDateChange(pay, $event)"
+                  [max]="todayDate"
+                  placeholder="MM/DD/YYYY">
+                <mat-datepicker-toggle matSuffix [for]="payDatePicker" class="datepicker-toggle">
+                  <mat-icon matDatepickerToggleIcon fontSet="material-symbols-outlined" class="datepicker-toggle-icon">calendar_month</mat-icon>
+                </mat-datepicker-toggle>
+                <mat-datepicker #payDatePicker></mat-datepicker>
               </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field add-method">
-                <mat-label class="form-label">Method</mat-label>
-                <mat-select [(ngModel)]="newPayMethod">
-                  <mat-option value="Check">Check</mat-option>
-                  <mat-option value="EFT">EFT</mat-option>
-                  <mat-option value="Patient">Patient</mat-option>
-                  <mat-option value="Adjustment">Adjustment</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field add-desc">
-                <mat-label class="form-label">Reference</mat-label>
-                <input matInput [(ngModel)]="newPayRef" maxlength="30" (keydown.enter)="addPayment()">
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="form-field add-amt">
-                <mat-label class="form-label">Amount</mat-label>
-                <input matInput type="number" step="0.01" [(ngModel)]="newPayAmount" (keydown.enter)="addPayment()">
-              </mat-form-field>
-              <button mat-stroked-button type="button" (click)="addPayment()">Add payment</button>
-            </div>
-          </div>
+            </ng-template>
+          </mat-expansion-panel>
+          </mat-accordion>
         </div>
 
         <ng-template #noServiceSelected>
@@ -453,6 +667,8 @@
         </ng-template>
       </div>
     </div>
+    </mat-tab>
+  </mat-tab-group>
 
     </div>
 

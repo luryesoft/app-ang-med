@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { Router } from '@angular/router';
@@ -6,11 +6,14 @@ import { GlobalService } from '../services/global.service';
 import { UserService } from '../services/user.service';
 import { LoginDTO } from '../models/login-dto';
 import { SharedDataService } from '../services/shared-data.service';
+import { UserPreferenceService } from '../services/user-preference.service';
 
 @Component({
-  selector: 'app-userlogin',
-  templateUrl: './userlogin.component.html',
-  styleUrl: './userlogin.component.scss'
+    selector: 'app-userlogin',
+    templateUrl: './userlogin.component.html',
+    styleUrl: './userlogin.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    standalone: false
 })
 
 export class UserloginComponent implements OnInit {
@@ -26,7 +29,8 @@ export class UserloginComponent implements OnInit {
                 private userService: UserService,
                 private router: Router,
                 private globalService: GlobalService,
-                private sharedDataService: SharedDataService) {
+                private sharedDataService: SharedDataService,
+                private userPreferenceService: UserPreferenceService) {
       this.loginForm = this.fb.group({
         userId: ['', [Validators.required, Validators.minLength(6)]],
         password: ['', [Validators.required, Validators.minLength(6)]]
@@ -57,6 +61,7 @@ export class UserloginComponent implements OnInit {
               this.globalService.setIsLogged(true);
               this.globalService.setCompanyId(response.user.company_id);
               this.globalService.setEntityImage(response.user.base_url_tx);
+              this.userPreferenceService.applyFromUser(response.user);
 
               this.userService.getBusinessEntityName(response.user.company_id).subscribe({
                 next: (name: string) => {

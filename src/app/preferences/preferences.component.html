@@ -1,0 +1,58 @@
+<div class="preferences">
+  <div class="preferences-hdr">
+    <span class="preferences-title">Preferences</span>
+  </div>
+
+  @if (loading) {
+    <div class="preferences-loading">
+      <mat-spinner diameter="28"></mat-spinner>
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-popup">{{ errorMessage }}</div>
+  }
+  @if (successMessage) {
+    <div class="popup-success">{{ successMessage }}</div>
+  }
+
+  @if (!loading) {
+    <section class="pref-card">
+      <div class="pref-hdr">Appearance</div>
+      <div class="pref-body">
+        <div class="pref-label">Theme</div>
+        <div class="pref-seg" (click)="$event.stopPropagation()">
+          <button type="button" class="pref-seg-btn" [class.active]="prefs.theme === 'light'" (click)="setTheme('light')">Light</button>
+          <button type="button" class="pref-seg-btn" [class.active]="prefs.theme === 'dark'" (click)="setTheme('dark')">Dark</button>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (!loading) {
+    <section class="pref-card">
+      <div class="pref-hdr">PDF documents</div>
+      <div class="pref-body">
+        <div class="pref-label">When printing NF-3, AOB, or delivery</div>
+        <div class="pref-seg" (click)="$event.stopPropagation()">
+          <button type="button" class="pref-seg-btn" [class.active]="prefs.pdf_action === 'open'" (click)="setPdfAction('open')">Open in new tab</button>
+          <button type="button" class="pref-seg-btn" [class.active]="prefs.pdf_action === 'save'" (click)="setPdfAction('save')">Save to folder</button>
+        </div>
+        @if (prefs.pdf_action === 'save') {
+          <div class="pref-folder">
+            <div class="pref-label">Save folder</div>
+            <div class="pref-folder-row">
+              <div class="pref-folder-value">{{ prefs.pdf_folder_nm || 'No folder selected yet' }}</div>
+              <button class="pref-browse" type="button" (click)="chooseFolder(); $event.stopPropagation()" [disabled]="saving">
+                Browse
+              </button>
+            </div>
+            <button class="pref-folder-clear" type="button" (click)="clearFolder(); $event.stopPropagation()" [disabled]="saving || !prefs.pdf_folder_nm">
+              Clear folder
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

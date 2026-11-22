@@ -5,17 +5,19 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { LoginDTO } from '../models/login-dto';
 import { GlobalService } from '../services/global.service';
+import { environment } from '../../environments/environment';
 
 const TOKEN_KEY = 'authToken';
+const SESSION_KEY = 'authSession';
 const USER_KEY = 'user';
 const LOGIN_PATH = '/users/login';
-const CLOCK_SKEW_MS = 30_000;
+const LOGOUT_PATH = '/users/logout';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:3000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
@@ -26,21 +28,20 @@ export class AuthService {
   login(dto: LoginDTO): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}${LOGIN_PATH}`, dto).pipe(
       tap((response) => {
-        const token = this.readToken(response);
         const succeeded = response?.message === 'Login successful' || response?.success === true;
+        this.clearStoredToken();
 
-        if (succeeded && token && this.isUsableToken(token)) {
-          this.setToken(token);
-          if (response.user) {
-            sessionStorage.setItem(USER_KEY, JSON.stringify(response.user));
-          }
+        if (succeeded && response?.user) {
+          sessionStorage.setItem(SESSION_KEY, '1');
+          sessionStorage.setItem(USER_KEY, JSON.stringify(response.user));
           return;
         }
 
-        this.clearToken();
+        this.clearSessionFlag();
       }),
       catchError((error) => {
-        this.clearToken();
+        this.clearSessionFlag();
+        this.clearStoredToken();
         if (error.status === 401) {
           return throwError(() => new Error('Invalid email or password'));
         }
@@ -49,74 +50,71 @@ export class AuthService {
     );
   }
 
-  setToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
-  }
-
-  getToken(): string | null {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!this.isUsableToken(token)) {
-      if (token) {
-        this.clearToken();
-      }
-      return null;
-    }
-    return token;
-  }
-
   get isLoggedIn(): boolean {
-    return !!this.getToken();
+    return sessionStorage.getItem(SESSION_KEY) === '1';
   }
 
   isLoginRequest(url: string): boolean {
-    return url.includes(LOGIN_PATH) || url.includes('/userlogin');
+    return url.includes(LOGIN_PATH) || url.includes(LOGOUT_PATH) || url.includes('/userlogin');
   }
 
-  logout(): void {
-    this.clearToken();
-    sessionStorage.removeItem(USER_KEY);
-    this.globalService.logout();
-    this.router.navigate(['/userlogin']);
-  }
-
-  private clearToken(): void {
-    localStorage.removeItem(TOKEN_KEY);
-  }
-
-  private readToken(response: any): string | null {
-    const token = response?.accessToken ?? response?.token;
-    return typeof token === 'string' && token.length > 0 ? token : null;
-  }
-
-  private isUsableToken(token: string | null): boolean {
-    if (!token) {
-      return false;
+  /** Drop leftover JavaScript tokens. The real session is the HttpOnly cookie. */
+  enforceBrowserSession(): void {
+    this.clearStoredToken();
+    if (!this.isLoggedIn) {
+      sessionStorage.removeItem(USER_KEY);
+      this.globalService.logout();
     }
-
-    const payload = this.decodePayload(token);
-    if (!payload) {
-      return false;
-    }
-
-    if (typeof payload.exp === 'number') {
-      return payload.exp * 1000 > Date.now() - CLOCK_SKEW_MS;
-    }
-
-    return true;
   }
 
-  private decodePayload(token: string): { exp?: number } | null {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
+  getStoredUser(): Record<string, unknown> | null {
+    const raw = sessionStorage.getItem(USER_KEY);
+    if (!raw) {
       return null;
     }
-
     try {
-      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-      return JSON.parse(atob(padded));
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : null;
     } catch {
       return null;
     }
+  }
+
+  patchStoredUser(partial: object): Record<string, unknown> {
+    const next = { ...(this.getStoredUser() || {}), ...partial };
+    sessionStorage.setItem(USER_KEY, JSON.stringify(next));
+    return next;
+  }
+
+  private loggingOut = false;
+
+  logout(): void {
+    if (this.loggingOut) {
+      return;
+    }
+    this.loggingOut = true;
+    this.http.post(`${this.apiUrl}${LOGOUT_PATH}`, {}).subscribe({
+      next: () => this.finishLogout(),
+      error: () => this.finishLogout()
+    });
+  }
+
+  private finishLogout(): void {
+    this.clearSessionFlag();
+    this.clearStoredToken();
+    sessionStorage.removeItem(USER_KEY);
+    this.globalService.logout();
+    document.body.classList.remove('app-dark');
+    this.loggingOut = false;
+    this.router.navigate(['/userlogin']);
+  }
+
+  private clearSessionFlag(): void {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+
+  private clearStoredToken(): void {
+    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
   }
 }
